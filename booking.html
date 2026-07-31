@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book a session — MindZone Community Counselling &amp; Psychotherapy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#241a35; --dusk:#3a2c58; --mist:#f3eef8; --paper:#fbf8fc;
+    --teal:#3fb0ac; --teal-deep:#2c8e8f; --violet:#6c5b9e; --rose:#e97c93;
+    --line: rgba(36,26,53,0.12); --max: 720px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Sora', sans-serif; color:var(--ink); background:var(--paper);
+    line-height:1.6;
+  }
+  .wrap{max-width:var(--max); margin:0 auto; padding:60px 24px 100px;}
+  h1{
+    font-family:'Fraunces', serif; font-weight:500; font-style:italic;
+    font-size:clamp(1.8rem, 4vw, 2.4rem); margin-bottom:10px; color:var(--dusk);
+  }
+  p.lede{color:#544a68; font-weight:300; margin-bottom:36px;}
+  .banner{
+    padding:14px 18px; border-radius:12px; margin-bottom:28px; font-weight:600; font-size:0.92rem;
+  }
+  .banner.success{ background:#e3f6f2; color:var(--teal-deep); border:1px solid var(--teal); }
+  .banner.cancelled{ background:#fdeef1; color:#a5445a; border:1px solid var(--rose); }
+  .day{ margin-bottom:32px; }
+  .day h2{
+    font-family:'Fraunces', serif; font-size:1.15rem; font-weight:500;
+    margin-bottom:14px; color:var(--ink);
+  }
+  .slots{ display:flex; flex-wrap:wrap; gap:10px; }
+  .slot{
+    border:1px solid var(--line); border-radius:100px; padding:10px 18px;
+    font-family:'Sora'; font-size:0.9rem; font-weight:600; cursor:pointer;
+    background:#fff; color:var(--dusk); transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .slot:hover{ transform:translateY(-2px); box-shadow:0 8px 20px -8px rgba(108,91,158,0.35); }
+  .slot.taken{
+    background:var(--mist); color:#9c93ac; text-decoration:line-through;
+    cursor:not-allowed; pointer-events:none; box-shadow:none; border-color:var(--line);
+  }
+  .slot .price{ opacity:0.7; font-weight:400; margin-left:6px; }
+  .empty{ color:#786d94; font-size:0.92rem; }
+  .loading{ color:#786d94; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Book a session</h1>
+  <p class="lede">Pick a time below. Slots update instantly and are held for you for 15 minutes while you pay.</p>
+
+  <div id="statusBanner"></div>
+  <div id="slotList"><p class="loading">Loading available times…</p></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  // ---- Fill these in after you deploy Supabase ----
+  const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds"; // safe to expose — read-only
+  // ---------------------------------------------------
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function formatDate(d){
+    return new Date(d + "T00:00:00").toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+  }
+  function formatPrice(pence){
+    return pence === 0 ? "Free" : `£${(pence/100).toFixed(0)}`;
+  }
+
+  async function loadSlots(){
+    const { data, error } = await supabase
+      .from('public_slots')
+      .select('*')
+      .gte('slot_date', new Date().toISOString().slice(0,10));
+
+    const container = document.getElementById('slotList');
+    if (error) {
+      container.innerHTML = `<p class="empty">Couldn't load times right now — please try again shortly.</p>`;
+      console.error(error);
+      return;
+    }
+    if (!data.length) {
+      container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
+      return;
+    }
+
+    const byDate = {};
+    data.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
+
+    container.innerHTML = Object.entries(byDate).map(([date, slots]) => `
+      <div class="day">
+        <h2>${formatDate(date)}</h2>
+        <div class="slots">
+          ${slots.map(s => `
+            <button class="slot ${s.status !== 'available' ? 'taken' : ''}"
+                    data-id="${s.id}"
+                    ${s.status !== 'available' ? 'disabled' : ''}>
+              ${s.slot_time.slice(0,5)}<span class="price">${formatPrice(s.price_pence)}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.slot:not(.taken)').forEach(btn => {
+      btn.addEventListener('click', () => bookSlot(btn.dataset.id, btn));
+    });
+  }
+
+  async function bookSlot(slotId, btn){
+    btn.disabled = true;
+    btn.textContent = "Starting checkout…";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot_id: slotId })
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        alert(result.error || "That slot just became unavailable.");
+        loadSlots();
+        return;
+      }
+      window.location.href = result.redirect;
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong — please try again.");
+      loadSlots();
+    }
+  }
+
+  // Show a banner if we've just come back from Stripe
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('status') === 'success') {
+    document.getElementById('statusBanner').innerHTML =
+      `<div class="banner success">Thanks — your session is booked and paid for. A confirmation will follow by email.</div>`;
+  } else if (params.get('status') === 'cancelled') {
+    document.getElementById('statusBanner').innerHTML =
+      `<div class="banner cancelled">Checkout was cancelled — your slot has been released. Feel free to pick another time.</div>`;
+  }
+
+  loadSlots();
+</script>
+</body>
+</html>
