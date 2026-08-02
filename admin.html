@@ -78,9 +78,9 @@
 </style>
 </head>
 <body>
- 
+
 <div class="wrap">
- 
+
   <div id="loginPanel">
     <h1>Manage availability</h1>
     <p class="lede">Log in to add or remove your bookable times.</p>
@@ -93,7 +93,7 @@
       <div id="loginMsg" class="msg"></div>
     </div>
   </div>
- 
+
   <div id="adminPanel">
     <div class="top-bar">
       <div>
@@ -102,7 +102,7 @@
       </div>
       <button class="ghost" id="logoutBtn">Log out</button>
     </div>
- 
+
     <div class="card">
       <h2>Add availability</h2>
       <div class="row">
@@ -115,7 +115,7 @@
           <input type="date" id="endDate">
         </div>
       </div>
- 
+
       <label>Which days?</label>
       <div class="check-grid" id="dayCheckboxes">
         <label><input type="checkbox" value="1" checked> Mon</label>
@@ -126,7 +126,7 @@
         <label><input type="checkbox" value="6"> Sat</label>
         <label><input type="checkbox" value="7"> Sun</label>
       </div>
- 
+
       <label>Which times?</label>
       <div class="check-grid" id="timeCheckboxes">
         <label><input type="checkbox" value="10:00" checked> 10:00</label>
@@ -136,7 +136,7 @@
         <label><input type="checkbox" value="15:00" checked> 15:00</label>
         <label><input type="checkbox" value="16:00" checked> 16:00</label>
       </div>
- 
+
       <div class="row">
         <div>
           <label for="priceResident">Resident price (£)</label>
@@ -147,31 +147,31 @@
           <input type="number" id="priceNonresident" value="50" min="0">
         </div>
       </div>
- 
+
       <button id="addBtn">Add these times</button>
       <div id="addMsg" class="msg"></div>
     </div>
- 
+
     <div class="card">
       <h2>Upcoming times</h2>
       <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">Booked times are locked and can't be removed here — only times nobody has paid for yet.</p>
       <div id="slotList"><p class="empty">Loading…</p></div>
     </div>
- 
+
   </div>
- 
+
 </div>
- 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds";
- 
+
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
- 
+
   const loginPanel = document.getElementById('loginPanel');
   const adminPanel = document.getElementById('adminPanel');
- 
+
   async function checkSession(){
     const { data: { session } } = await db.auth.getSession();
     if (session) {
@@ -183,7 +183,7 @@
       adminPanel.style.display = 'none';
     }
   }
- 
+
   document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -197,16 +197,16 @@
     }
     checkSession();
   });
- 
+
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await db.auth.signOut();
     checkSession();
   });
- 
+
   function formatDate(d){
     return new Date(d + "T00:00:00").toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
   }
- 
+
   async function loadSlots(){
     const container = document.getElementById('slotList');
     const { data, error } = await db
@@ -214,7 +214,7 @@
       .select('*')
       .gte('slot_date', new Date().toISOString().slice(0,10))
       .order('slot_date').order('slot_time');
- 
+
     if (error) {
       container.innerHTML = `<p class="empty">Couldn't load times: ${error.message}</p>`;
       return;
@@ -223,10 +223,10 @@
       container.innerHTML = `<p class="empty">No upcoming times yet — add some above.</p>`;
       return;
     }
- 
+
     const byDate = {};
     data.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
- 
+
     container.innerHTML = Object.entries(byDate).map(([date, slots]) => `
       <div class="day-group">
         <h3>${formatDate(date)}</h3>
@@ -234,7 +234,7 @@
           <div class="slot-row">
             <span>
               ${s.slot_time.slice(0,5)} <span class="badge ${s.status}">${s.status}</span>
-              ${s.status === 'booked' && s.client_name ? ` — ${s.client_name}${s.client_email ? ` (${s.client_email})` : ''}` : ''}
+              ${s.status === 'booked' && s.client_name ? ` — ${s.client_name}${s.client_email ? ` (${s.client_email})` : ''}${s.session_format ? ` · ${s.session_format === 'online' ? 'Online' : 'In person'}` : ''}` : ''}
             </span>
             ${s.status === 'available'
               ? `<button class="remove-btn" data-id="${s.id}">Remove</button>`
@@ -243,36 +243,36 @@
         `).join('')}
       </div>
     `).join('');
- 
+
     container.querySelectorAll('.remove-btn').forEach(btn => {
       btn.addEventListener('click', () => removeSlot(btn.dataset.id));
     });
   }
- 
+
   async function removeSlot(id){
     if (!confirm('Remove this time slot?')) return;
     const { error } = await db.from('slots').delete().eq('id', id);
     if (error) { alert(error.message); return; }
     loadSlots();
   }
- 
+
   document.getElementById('addBtn').addEventListener('click', async () => {
     const msg = document.getElementById('addMsg');
     msg.textContent = '';
- 
+
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
     const days = [...document.querySelectorAll('#dayCheckboxes input:checked')].map(el => Number(el.value));
     const times = [...document.querySelectorAll('#timeCheckboxes input:checked')].map(el => el.value);
     const priceResident = Math.round(Number(document.getElementById('priceResident').value) * 100);
     const priceNonresident = Math.round(Number(document.getElementById('priceNonresident').value) * 100);
- 
+
     if (!startDate || !endDate || !days.length || !times.length) {
       msg.textContent = 'Please fill in dates, at least one day, and at least one time.';
       msg.className = 'msg error';
       return;
     }
- 
+
     const rows = [];
     let d = new Date(startDate + "T00:00:00");
     const end = new Date(endDate + "T00:00:00");
@@ -291,11 +291,11 @@
       }
       d.setDate(d.getDate() + 1);
     }
- 
+
     document.getElementById('addBtn').disabled = true;
     const { error } = await db.from('slots').insert(rows);
     document.getElementById('addBtn').disabled = false;
- 
+
     if (error) {
       msg.textContent = error.message;
       msg.className = 'msg error';
@@ -305,7 +305,7 @@
     msg.className = 'msg success';
     loadSlots();
   });
- 
+
   checkSession();
 </script>
 </body>
