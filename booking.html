@@ -57,6 +57,46 @@
     font-family:'Sora'; font-size:0.9rem; font-weight:600; color:var(--dusk);
     border:1px solid var(--line); border-radius:100px; padding:6px 14px; background:#fff;
   }
+  .calendar{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:18px; margin-bottom:28px;
+  }
+  .cal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .cal-header h3{
+    font-family:'Fraunces', serif; font-weight:500; font-size:1.02rem; color:var(--dusk);
+  }
+  .cal-nav{
+    display:flex; gap:6px;
+  }
+  .cal-nav button{
+    width:34px; height:34px; border-radius:50%; border:1px solid var(--line);
+    background:#fff; font-size:1rem; cursor:pointer; color:var(--dusk);
+  }
+  .cal-nav button:disabled{ opacity:0.3; cursor:not-allowed; }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; text-align:center; }
+  .cal-dow{
+    font-size:0.68rem; font-weight:700; color:#a89dbd; text-transform:uppercase;
+    padding:4px 0 8px;
+  }
+  .cal-day{
+    aspect-ratio:1; min-height:38px; display:flex; align-items:center; justify-content:center;
+    border-radius:50%; font-size:0.85rem; font-weight:600; color:var(--ink);
+    cursor:pointer; position:relative; border:none; background:none; font-family:'Sora';
+  }
+  .cal-day.empty{ visibility:hidden; cursor:default; }
+  .cal-day.no-slots{ color:#d3cce0; cursor:not-allowed; font-weight:400; }
+  .cal-day.has-slots:hover{ background:var(--mist); }
+  .cal-day.selected{
+    background:linear-gradient(120deg, var(--teal), var(--violet)); color:#fff;
+  }
+  .cal-day .dot{
+    position:absolute; bottom:4px; width:4px; height:4px; border-radius:50%; background:var(--teal);
+  }
+  .cal-day.selected .dot{ background:#fff; }
+  .clear-filter{
+    display:inline-block; font-size:0.85rem; font-weight:600; color:var(--violet);
+    background:none; border:none; cursor:pointer; text-decoration:underline; margin-bottom:20px; padding:0;
+  }
 </style>
 </head>
 <body>
@@ -72,6 +112,17 @@
       <option value="nonresident">Non-resident — £50</option>
     </select>
   </div>
+ 
+  <div class="calendar">
+    <div class="cal-header">
+      <button id="calPrev" aria-label="Previous month">‹</button>
+      <h3 id="calMonthLabel"></h3>
+      <button id="calNext" aria-label="Next month">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+ 
+  <button id="clearFilter" class="clear-filter" style="display:none;">Show all upcoming dates</button>
  
   <div id="statusBanner"></div>
   <div id="slotList"><p class="loading">Loading available times…</p></div>
@@ -100,6 +151,8 @@
   }
  
   let latestSlots = [];
+  let selectedDate = null; // e.g. '2026-08-10', or null = show everything
+  let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
  
   async function loadSlots(){
     const { data, error } = await db
@@ -119,13 +172,94 @@
     }
  
     latestSlots = data;
+    renderCalendar();
     renderSlots();
   }
  
+  function datesWithAvailability(){
+    return new Set(
+      latestSlots.filter(s => s.status === 'available').map(s => s.slot_date)
+    );
+  }
+ 
+  function renderCalendar(){
+    const grid = document.getElementById('calGrid');
+    const label = document.getElementById('calMonthLabel');
+    const available = datesWithAvailability();
+ 
+    label.textContent = calMonth.toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+ 
+    const year = calMonth.getFullYear();
+    const month = calMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7; // make Monday index 0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayStr = new Date().toISOString().slice(0,10);
+ 
+    const dowLabels = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+    let html = dowLabels.map(d => `<div class="cal-dow">${d}</div>`).join('');
+ 
+    for (let i = 0; i < startOffset; i++) html += `<div class="cal-day empty"></div>`;
+ 
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const hasSlots = available.has(dateStr);
+      const isPast = dateStr < todayStr;
+      const isSelected = dateStr === selectedDate;
+      const classes = ['cal-day'];
+      if (!hasSlots || isPast) classes.push('no-slots'); else classes.push('has-slots');
+      if (isSelected) classes.push('selected');
+      html += `
+        <button class="${classes.join(' ')}" data-date="${dateStr}" ${(!hasSlots || isPast) ? 'disabled' : ''}>
+          ${day}${hasSlots && !isPast ? '<span class="dot"></span>' : ''}
+        </button>
+      `;
+    }
+ 
+    grid.innerHTML = html;
+    grid.querySelectorAll('.cal-day.has-slots').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedDate = btn.dataset.date === selectedDate ? null : btn.dataset.date;
+        renderCalendar();
+        renderSlots();
+      });
+    });
+ 
+    // Don't let people navigate before the current month
+    const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth();
+    document.getElementById('calPrev').disabled = isCurrentMonth;
+  }
+ 
+  document.getElementById('calPrev').addEventListener('click', () => {
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1);
+    renderCalendar();
+  });
+  document.getElementById('calNext').addEventListener('click', () => {
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1);
+    renderCalendar();
+  });
+  document.getElementById('clearFilter').addEventListener('click', () => {
+    selectedDate = null;
+    renderCalendar();
+    renderSlots();
+  });
+ 
   function renderSlots(){
     const container = document.getElementById('slotList');
+    const clearBtn = document.getElementById('clearFilter');
+    clearBtn.style.display = selectedDate ? 'inline-block' : 'none';
+ 
+    const visibleSlots = selectedDate
+      ? latestSlots.filter(s => s.slot_date === selectedDate)
+      : latestSlots;
+ 
+    if (!visibleSlots.length) {
+      container.innerHTML = `<p class="empty">No times on that date — try another day on the calendar.</p>`;
+      return;
+    }
+ 
     const byDate = {};
-    latestSlots.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
+    visibleSlots.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
  
     container.innerHTML = Object.entries(byDate).map(([date, slots]) => `
       <div class="day">
@@ -190,4 +324,3 @@
 </script>
 </body>
 </html>
- 
