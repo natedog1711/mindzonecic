@@ -172,7 +172,20 @@
       return;
     }
  
-    latestSlots = data;
+    // The database query only excludes past dates — it doesn't know what
+    // time it is right now, so a slot earlier today would otherwise still
+    // show as bookable for the rest of the day. Filter those out here.
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0,10);
+    const nowTimeStr = now.toTimeString().slice(0,8); // 'HH:MM:SS'
+    const upcoming = data.filter(s => s.slot_date !== todayStr || s.slot_time > nowTimeStr);
+ 
+    if (!upcoming.length) {
+      container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
+      return;
+    }
+ 
+    latestSlots = upcoming;
     renderCalendar();
     renderSlots();
   }
