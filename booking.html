@@ -51,37 +51,37 @@
 </style>
 </head>
 <body>
-
+ 
 <div class="wrap">
   <h1>Book a session</h1>
   <p class="lede">Pick a time below. Slots update instantly and are held for you for 15 minutes while you pay.</p>
-
+ 
   <div id="statusBanner"></div>
   <div id="slotList"><p class="loading">Loading available times…</p></div>
 </div>
-
+ 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // ---- Fill these in after you deploy Supabase ----
   const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds";
   // ---------------------------------------------------
-
+ 
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+ 
   function formatDate(d){
     return new Date(d + "T00:00:00").toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
   }
   function formatPrice(pence){
     return pence === 0 ? "Free" : `£${(pence/100).toFixed(0)}`;
   }
-
+ 
   async function loadSlots(){
     const { data, error } = await db
       .from('public_slots')
       .select('*')
       .gte('slot_date', new Date().toISOString().slice(0,10));
-
+ 
     const container = document.getElementById('slotList');
     if (error) {
       container.innerHTML = `<p class="empty">Couldn't load times right now — please try again shortly.</p>`;
@@ -92,10 +92,10 @@
       container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
       return;
     }
-
+ 
     const byDate = {};
     data.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
-
+ 
     container.innerHTML = Object.entries(byDate).map(([date, slots]) => `
       <div class="day">
         <h2>${formatDate(date)}</h2>
@@ -110,19 +110,23 @@
         </div>
       </div>
     `).join('');
-
+ 
     container.querySelectorAll('.slot:not(.taken)').forEach(btn => {
       btn.addEventListener('click', () => bookSlot(btn.dataset.id, btn));
     });
   }
-
+ 
   async function bookSlot(slotId, btn){
     btn.disabled = true;
     btn.textContent = "Starting checkout…";
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
         body: JSON.stringify({ slot_id: slotId })
       });
       const result = await res.json();
@@ -138,7 +142,7 @@
       loadSlots();
     }
   }
-
+ 
   // Show a banner if we've just come back from Stripe
   const params = new URLSearchParams(window.location.search);
   if (params.get('status') === 'success') {
@@ -148,8 +152,9 @@
     document.getElementById('statusBanner').innerHTML =
       `<div class="banner cancelled">Checkout was cancelled — your slot has been released. Feel free to pick another time.</div>`;
   }
-
+ 
   loadSlots();
 </script>
 </body>
 </html>
+ 
