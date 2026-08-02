@@ -48,6 +48,15 @@
   .slot .price{ opacity:0.7; font-weight:400; margin-left:6px; }
   .empty{ color:#786d94; font-size:0.92rem; }
   .loading{ color:#786d94; }
+  .residency{
+    display:flex; align-items:center; gap:12px; margin-bottom:32px;
+    padding:14px 18px; background:#fff; border:1px solid var(--line); border-radius:12px;
+  }
+  .residency label{ font-size:0.9rem; font-weight:500; }
+  .residency select{
+    font-family:'Sora'; font-size:0.9rem; font-weight:600; color:var(--dusk);
+    border:1px solid var(--line); border-radius:100px; padding:6px 14px; background:#fff;
+  }
 </style>
 </head>
 <body>
@@ -55,6 +64,14 @@
 <div class="wrap">
   <h1>Book a session</h1>
   <p class="lede">Pick a time below. Slots update instantly and are held for you for 30 minutes while you pay.</p>
+ 
+  <div class="residency">
+    <label for="residency">I am booking as a:</label>
+    <select id="residency">
+      <option value="resident">West Dunbartonshire resident — £40</option>
+      <option value="nonresident">Non-resident — £50</option>
+    </select>
+  </div>
  
   <div id="statusBanner"></div>
   <div id="slotList"><p class="loading">Loading available times…</p></div>
@@ -75,6 +92,14 @@
   function formatPrice(pence){
     return pence === 0 ? "Free" : `£${(pence/100).toFixed(0)}`;
   }
+  function currentResidency(){
+    return document.getElementById('residency').value; // 'resident' or 'nonresident'
+  }
+  function priceForSlot(s){
+    return currentResidency() === 'resident' ? s.price_pence_resident : s.price_pence_nonresident;
+  }
+ 
+  let latestSlots = [];
  
   async function loadSlots(){
     const { data, error } = await db
@@ -93,8 +118,14 @@
       return;
     }
  
+    latestSlots = data;
+    renderSlots();
+  }
+ 
+  function renderSlots(){
+    const container = document.getElementById('slotList');
     const byDate = {};
-    data.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
+    latestSlots.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
  
     container.innerHTML = Object.entries(byDate).map(([date, slots]) => `
       <div class="day">
@@ -104,7 +135,7 @@
             <button class="slot ${s.status !== 'available' ? 'taken' : ''}"
                     data-id="${s.id}"
                     ${s.status !== 'available' ? 'disabled' : ''}>
-              ${s.slot_time.slice(0,5)}<span class="price">${formatPrice(s.price_pence)}</span>
+              ${s.slot_time.slice(0,5)}<span class="price">${formatPrice(priceForSlot(s))}</span>
             </button>
           `).join('')}
         </div>
@@ -115,6 +146,8 @@
       btn.addEventListener('click', () => bookSlot(btn.dataset.id, btn));
     });
   }
+ 
+  document.getElementById('residency').addEventListener('change', renderSlots);
  
   async function bookSlot(slotId, btn){
     btn.disabled = true;
@@ -127,7 +160,7 @@
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({ slot_id: slotId })
+        body: JSON.stringify({ slot_id: slotId, residency: currentResidency() })
       });
       const result = await res.json();
       if (!res.ok) {
