@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage availability — MindZone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#241a35; --dusk:#3a2c58; --mist:#f3eef8; --paper:#fbf8fc;
+    --teal:#3fb0ac; --teal-deep:#2c8e8f; --violet:#6c5b9e; --rose:#e97c93;
+    --line: rgba(36,26,53,0.12); --max: 780px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Sora', sans-serif; color:var(--ink); background:var(--paper);
+    line-height:1.6;
+  }
+  .wrap{max-width:var(--max); margin:0 auto; padding:50px 24px 100px;}
+  h1{
+    font-family:'Fraunces', serif; font-weight:500; font-style:italic;
+    font-size:clamp(1.6rem, 4vw, 2.1rem); margin-bottom:6px; color:var(--dusk);
+  }
+  h2{ font-family:'Fraunces', serif; font-size:1.1rem; font-weight:500; margin-bottom:14px; }
+  p.lede{color:#544a68; font-weight:300; margin-bottom:30px;}
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:24px; margin-bottom:28px;
+  }
+  label{ display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px; color:var(--dusk); }
+  input[type=email], input[type=password], input[type=date], input[type=number]{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    font-family:'Sora'; font-size:0.95rem; margin-bottom:16px;
+  }
+  .row{ display:flex; gap:16px; flex-wrap:wrap; }
+  .row > div{ flex:1; min-width:140px; }
+  .check-grid{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+  .check-grid label{
+    display:flex; align-items:center; gap:6px; font-weight:500; font-size:0.88rem;
+    border:1px solid var(--line); border-radius:100px; padding:7px 14px; cursor:pointer; margin:0;
+  }
+  .check-grid input{ margin:0; }
+  button{
+    font-family:'Sora'; font-weight:600; font-size:0.9rem; cursor:pointer;
+    border:none; border-radius:100px; padding:11px 22px;
+    background:linear-gradient(120deg, var(--teal), var(--violet)); color:#fff;
+  }
+  button.ghost{
+    background:transparent; border:1px solid var(--line); color:var(--dusk);
+  }
+  button:disabled{ opacity:0.5; cursor:not-allowed; }
+  .msg{ font-size:0.88rem; margin-top:10px; }
+  .msg.error{ color:#a5445a; }
+  .msg.success{ color:var(--teal-deep); }
+  .day-group{ margin-bottom:18px; }
+  .day-group h3{ font-size:0.95rem; font-weight:600; margin-bottom:8px; }
+  .slot-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 4px; border-bottom:1px solid var(--line); font-size:0.9rem;
+  }
+  .slot-row:last-child{ border-bottom:none; }
+  .badge{
+    font-size:0.72rem; font-weight:700; padding:2px 9px; border-radius:100px;
+    text-transform:uppercase; letter-spacing:0.02em;
+  }
+  .badge.available{ background:#e3f6f2; color:var(--teal-deep); }
+  .badge.booked{ background:var(--mist); color:var(--violet); }
+  .badge.pending{ background:#fdf3e3; color:#a5762f; }
+  .remove-btn{
+    background:none; border:none; color:var(--rose); font-size:0.85rem;
+    font-weight:600; cursor:pointer; padding:4px 8px;
+  }
+  #adminPanel{ display:none; }
+  .top-bar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; }
+  .empty{ color:#786d94; font-size:0.9rem; }
+</style>
+</head>
+<body>
+ 
+<div class="wrap">
+ 
+  <div id="loginPanel">
+    <h1>Manage availability</h1>
+    <p class="lede">Log in to add or remove your bookable times.</p>
+    <div class="card" style="max-width:380px;">
+      <label for="email">Email</label>
+      <input type="email" id="email" autocomplete="username">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+      <button id="loginBtn">Log in</button>
+      <div id="loginMsg" class="msg"></div>
+    </div>
+  </div>
+ 
+  <div id="adminPanel">
+    <div class="top-bar">
+      <div>
+        <h1>Manage availability</h1>
+        <p class="lede" style="margin-bottom:0;">Add new times or remove ones you no longer want to offer.</p>
+      </div>
+      <button class="ghost" id="logoutBtn">Log out</button>
+    </div>
+ 
+    <div class="card">
+      <h2>Add availability</h2>
+      <div class="row">
+        <div>
+          <label for="startDate">From date</label>
+          <input type="date" id="startDate">
+        </div>
+        <div>
+          <label for="endDate">To date</label>
+          <input type="date" id="endDate">
+        </div>
+      </div>
+ 
+      <label>Which days?</label>
+      <div class="check-grid" id="dayCheckboxes">
+        <label><input type="checkbox" value="1" checked> Mon</label>
+        <label><input type="checkbox" value="2" checked> Tue</label>
+        <label><input type="checkbox" value="3" checked> Wed</label>
+        <label><input type="checkbox" value="4" checked> Thu</label>
+        <label><input type="checkbox" value="5" checked> Fri</label>
+        <label><input type="checkbox" value="6"> Sat</label>
+        <label><input type="checkbox" value="7"> Sun</label>
+      </div>
+ 
+      <label>Which times?</label>
+      <div class="check-grid" id="timeCheckboxes">
+        <label><input type="checkbox" value="10:00" checked> 10:00</label>
+        <label><input type="checkbox" value="11:00" checked> 11:00</label>
+        <label><input type="checkbox" value="13:00" checked> 13:00</label>
+        <label><input type="checkbox" value="14:00" checked> 14:00</label>
+        <label><input type="checkbox" value="15:00" checked> 15:00</label>
+        <label><input type="checkbox" value="16:00" checked> 16:00</label>
+      </div>
+ 
+      <div class="row">
+        <div>
+          <label for="priceResident">Resident price (£)</label>
+          <input type="number" id="priceResident" value="40" min="0">
+        </div>
+        <div>
+          <label for="priceNonresident">Non-resident price (£)</label>
+          <input type="number" id="priceNonresident" value="50" min="0">
+        </div>
+      </div>
+ 
+      <button id="addBtn">Add these times</button>
+      <div id="addMsg" class="msg"></div>
+    </div>
+ 
+    <div class="card">
+      <h2>Upcoming times</h2>
+      <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">Booked times are locked and can't be removed here — only times nobody has paid for yet.</p>
+      <div id="slotList"><p class="empty">Loading…</p></div>
+    </div>
+ 
+  </div>
+ 
+</div>
+ 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds";
+ 
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+ 
+  const loginPanel = document.getElementById('loginPanel');
+  const adminPanel = document.getElementById('adminPanel');
+ 
+  async function checkSession(){
+    const { data: { session } } = await db.auth.getSession();
+    if (session) {
+      loginPanel.style.display = 'none';
+      adminPanel.style.display = 'block';
+      loadSlots();
+    } else {
+      loginPanel.style.display = 'block';
+      adminPanel.style.display = 'none';
+    }
+  }
+ 
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('loginMsg');
+    msg.textContent = '';
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) {
+      msg.textContent = error.message;
+      msg.className = 'msg error';
+      return;
+    }
+    checkSession();
+  });
+ 
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await db.auth.signOut();
+    checkSession();
+  });
+ 
+  function formatDate(d){
+    return new Date(d + "T00:00:00").toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+  }
+ 
+  async function loadSlots(){
+    const container = document.getElementById('slotList');
+    const { data, error } = await db
+      .from('slots')
+      .select('*')
+      .gte('slot_date', new Date().toISOString().slice(0,10))
+      .order('slot_date').order('slot_time');
+ 
+    if (error) {
+      container.innerHTML = `<p class="empty">Couldn't load times: ${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      container.innerHTML = `<p class="empty">No upcoming times yet — add some above.</p>`;
+      return;
+    }
+ 
+    const byDate = {};
+    data.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
+ 
+    container.innerHTML = Object.entries(byDate).map(([date, slots]) => `
+      <div class="day-group">
+        <h3>${formatDate(date)}</h3>
+        ${slots.map(s => `
+          <div class="slot-row">
+            <span>${s.slot_time.slice(0,5)} <span class="badge ${s.status}">${s.status}</span></span>
+            ${s.status === 'available'
+              ? `<button class="remove-btn" data-id="${s.id}">Remove</button>`
+              : ''}
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+ 
+    container.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => removeSlot(btn.dataset.id));
+    });
+  }
+ 
+  async function removeSlot(id){
+    if (!confirm('Remove this time slot?')) return;
+    const { error } = await db.from('slots').delete().eq('id', id);
+    if (error) { alert(error.message); return; }
+    loadSlots();
+  }
+ 
+  document.getElementById('addBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('addMsg');
+    msg.textContent = '';
+ 
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const days = [...document.querySelectorAll('#dayCheckboxes input:checked')].map(el => Number(el.value));
+    const times = [...document.querySelectorAll('#timeCheckboxes input:checked')].map(el => el.value);
+    const priceResident = Math.round(Number(document.getElementById('priceResident').value) * 100);
+    const priceNonresident = Math.round(Number(document.getElementById('priceNonresident').value) * 100);
+ 
+    if (!startDate || !endDate || !days.length || !times.length) {
+      msg.textContent = 'Please fill in dates, at least one day, and at least one time.';
+      msg.className = 'msg error';
+      return;
+    }
+ 
+    const rows = [];
+    let d = new Date(startDate + "T00:00:00");
+    const end = new Date(endDate + "T00:00:00");
+    while (d <= end) {
+      const isoDow = d.getDay() === 0 ? 7 : d.getDay(); // JS Sunday=0 → make it 7, Monday=1..Saturday=6
+      if (days.includes(isoDow)) {
+        times.forEach(t => {
+          rows.push({
+            slot_date: d.toISOString().slice(0,10),
+            slot_time: t,
+            price_pence_resident: priceResident,
+            price_pence_nonresident: priceNonresident,
+            session_type: 'Counselling session',
+          });
+        });
+      }
+      d.setDate(d.getDate() + 1);
+    }
+ 
+    document.getElementById('addBtn').disabled = true;
+    const { error } = await db.from('slots').insert(rows);
+    document.getElementById('addBtn').disabled = false;
+ 
+    if (error) {
+      msg.textContent = error.message;
+      msg.className = 'msg error';
+      return;
+    }
+    msg.textContent = `Added ${rows.length} new time slot(s).`;
+    msg.className = 'msg success';
+    loadSlots();
+  });
+ 
+  checkSession();
+</script>
+</body>
+</html>
