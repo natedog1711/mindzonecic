@@ -120,7 +120,7 @@
     btn.disabled = true;
     btn.textContent = "Starting checkout…";
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/bright-responder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -157,4 +157,3 @@
 </script>
 </body>
 </html>
- 
