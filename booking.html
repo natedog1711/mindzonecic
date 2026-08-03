@@ -101,11 +101,11 @@
 </style>
 </head>
 <body>
- 
+
 <div class="wrap">
   <h1>Book a session</h1>
-  <p class="lede">Pick a time below. Slots update instantly and are held for you for 30 minutes while you pay.</p>
- 
+  <p class="lede">Pick a time below. Slots update instantly and are held for you for 30 minutes while you pay. Free cancellation or rescheduling up to 48 hours before your session — you'll get a personal link to manage it after booking.</p>
+
   <div class="residency">
     <label for="residency">I am booking as a:</label>
     <select id="residency">
@@ -113,7 +113,7 @@
       <option value="nonresident">Non-resident — £50</option>
     </select>
   </div>
- 
+
   <div class="calendar">
     <div class="cal-header">
       <button id="calPrev" aria-label="Previous month">‹</button>
@@ -122,22 +122,22 @@
     </div>
     <div class="cal-grid" id="calGrid"></div>
   </div>
- 
+
   <button id="clearFilter" class="clear-filter" style="display:none;">Show all upcoming dates</button>
- 
+
   <div id="statusBanner"></div>
   <div id="slotList"><p class="loading">Loading available times…</p></div>
 </div>
- 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // ---- Fill these in after you deploy Supabase ----
   const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds";
   // ---------------------------------------------------
- 
+
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
- 
+
   function formatDate(d){
     return new Date(d + "T00:00:00").toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
   }
@@ -150,17 +150,17 @@
   function priceForSlot(s){
     return currentResidency() === 'resident' ? s.price_pence_resident : s.price_pence_nonresident;
   }
- 
+
   let latestSlots = [];
   let selectedDate = null; // e.g. '2026-08-10', or null = show everything
   let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
- 
+
   async function loadSlots(){
     const { data, error } = await db
       .from('public_slots')
       .select('*')
       .gte('slot_date', new Date().toISOString().slice(0,10));
- 
+
     const container = document.getElementById('slotList');
     if (error) {
       container.innerHTML = `<p class="empty">Couldn't load times right now — please try again shortly.</p>`;
@@ -171,7 +171,7 @@
       container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
       return;
     }
- 
+
     // The database query only excludes past dates — it doesn't know what
     // time it is right now, so a slot earlier today would otherwise still
     // show as bookable for the rest of the day. Filter those out here.
@@ -179,42 +179,42 @@
     const todayStr = now.toISOString().slice(0,10);
     const nowTimeStr = now.toTimeString().slice(0,8); // 'HH:MM:SS'
     const upcoming = data.filter(s => s.slot_date !== todayStr || s.slot_time > nowTimeStr);
- 
+
     if (!upcoming.length) {
       container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
       return;
     }
- 
+
     latestSlots = upcoming;
     renderCalendar();
     renderSlots();
   }
- 
+
   function datesWithAvailability(){
     return new Set(
       latestSlots.filter(s => s.status === 'available').map(s => s.slot_date)
     );
   }
- 
+
   function renderCalendar(){
     const grid = document.getElementById('calGrid');
     const label = document.getElementById('calMonthLabel');
     const available = datesWithAvailability();
- 
+
     label.textContent = calMonth.toLocaleDateString('en-GB', { month:'long', year:'numeric' });
- 
+
     const year = calMonth.getFullYear();
     const month = calMonth.getMonth();
     const firstDay = new Date(year, month, 1);
     const startOffset = (firstDay.getDay() + 6) % 7; // make Monday index 0
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const todayStr = new Date().toISOString().slice(0,10);
- 
+
     const dowLabels = ['Mo','Tu','We','Th','Fr','Sa','Su'];
     let html = dowLabels.map(d => `<div class="cal-dow">${d}</div>`).join('');
- 
+
     for (let i = 0; i < startOffset; i++) html += `<div class="cal-day empty"></div>`;
- 
+
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const hasSlots = available.has(dateStr);
@@ -229,7 +229,7 @@
         </button>
       `;
     }
- 
+
     grid.innerHTML = html;
     grid.querySelectorAll('.cal-day.has-slots').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -238,12 +238,12 @@
         renderSlots();
       });
     });
- 
+
     // Don't let people navigate before the current month
     const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth();
     document.getElementById('calPrev').disabled = isCurrentMonth;
   }
- 
+
   document.getElementById('calPrev').addEventListener('click', () => {
     calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1);
     renderCalendar();
@@ -257,24 +257,24 @@
     renderCalendar();
     renderSlots();
   });
- 
+
   function renderSlots(){
     const container = document.getElementById('slotList');
     const clearBtn = document.getElementById('clearFilter');
     clearBtn.style.display = selectedDate ? 'inline-block' : 'none';
- 
+
     const visibleSlots = selectedDate
       ? latestSlots.filter(s => s.slot_date === selectedDate)
       : latestSlots;
- 
+
     if (!visibleSlots.length) {
       container.innerHTML = `<p class="empty">No times on that date — try another day on the calendar.</p>`;
       return;
     }
- 
+
     const byDate = {};
     visibleSlots.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
- 
+
     container.innerHTML = Object.entries(byDate).map(([date, slots]) => `
       <div class="day">
         <h2>${formatDate(date)}</h2>
@@ -289,14 +289,14 @@
         </div>
       </div>
     `).join('');
- 
+
     container.querySelectorAll('.slot:not(.taken)').forEach(btn => {
       btn.addEventListener('click', () => bookSlot(btn.dataset.id, btn));
     });
   }
- 
+
   document.getElementById('residency').addEventListener('change', renderSlots);
- 
+
   async function bookSlot(slotId, btn){
     btn.disabled = true;
     btn.textContent = "Starting checkout…";
@@ -323,7 +323,7 @@
       loadSlots();
     }
   }
- 
+
   // Show a banner if we've just come back from Stripe
   const params = new URLSearchParams(window.location.search);
   if (params.get('status') === 'success') {
@@ -332,8 +332,24 @@
   } else if (params.get('status') === 'cancelled') {
     document.getElementById('statusBanner').innerHTML =
       `<div class="banner cancelled">Checkout was cancelled — your slot has been released. Feel free to pick another time.</div>`;
+
+    const cancelledSlotId = params.get('slot_id');
+    const cancelledSessionId = params.get('session_id');
+    if (cancelledSlotId && cancelledSessionId) {
+      fetch(`${SUPABASE_URL}/functions/v1/release-hold`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ slot_id: cancelledSlotId, session_id: cancelledSessionId })
+      })
+        .catch(err => console.error('Failed to release hold:', err))
+        .finally(() => loadSlots()); // refresh so the freed slot shows immediately
+    }
   }
- 
+
   loadSlots();
 </script>
 </body>
