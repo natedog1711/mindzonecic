@@ -392,7 +392,6 @@
     </ul>
     <a class="nav-cta nav-cta-book" href="/booking.html">Book a session</a>
     <a class="nav-cta nav-cta-youth" href="/youth-service.html">Youth Service</a>
-    <a class="nav-cta" href="https://wa.me/447734456367" target="_blank" rel="noopener">Message on WhatsApp</a>
     <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMobilePanel" aria-label="Open menu">
       <span></span>
     </button>
@@ -406,7 +405,6 @@
     </ul>
     <a class="nav-cta nav-cta-book" href="/booking.html">Book a session</a>
     <a class="nav-cta nav-cta-youth" href="/youth-service.html">Youth Service</a>
-    <a class="nav-cta" href="https://wa.me/447734456367" target="_blank" rel="noopener">Message on WhatsApp</a>
   </div>
 </nav>
 
@@ -615,8 +613,85 @@
         <div class="support-note">MindZone offers scheduled, ongoing counselling rather than crisis support. If you're in crisis or at risk right now, please contact <strong>Samaritans free on 116 123</strong> or call <strong>999</strong>.</div>
       </div>
     </div>
+
+    <div id="contactFormCard" style="max-width:520px; margin:40px auto 0; background:#fff; border:1px solid rgba(36,26,53,0.12); border-radius:16px; padding:28px;">
+      <h3 style="font-family:'Fraunces', serif; font-weight:500; font-size:1.15rem; margin-bottom:6px; color:#3a2c58;">Send an initial enquiry</h3>
+      <p style="font-size:0.88rem; color:#786d94; margin-bottom:20px;">Not ready to book yet? Send a quick message and Mags will get back to you.</p>
+
+      <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px; color:#3a2c58;">Name</label>
+      <input type="text" id="cfName" style="width:100%; padding:10px 12px; border:1px solid rgba(36,26,53,0.12); border-radius:8px; font-family:'Sora'; font-size:0.95rem; margin-bottom:14px; box-sizing:border-box;">
+
+      <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px; color:#3a2c58;">Email</label>
+      <input type="email" id="cfEmail" style="width:100%; padding:10px 12px; border:1px solid rgba(36,26,53,0.12); border-radius:8px; font-family:'Sora'; font-size:0.95rem; margin-bottom:14px; box-sizing:border-box;">
+
+      <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px; color:#3a2c58;">Phone (optional)</label>
+      <input type="tel" id="cfPhone" style="width:100%; padding:10px 12px; border:1px solid rgba(36,26,53,0.12); border-radius:8px; font-family:'Sora'; font-size:0.95rem; margin-bottom:14px; box-sizing:border-box;">
+
+      <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px; color:#3a2c58;">Message</label>
+      <textarea id="cfMessage" rows="4" style="width:100%; padding:10px 12px; border:1px solid rgba(36,26,53,0.12); border-radius:8px; font-family:'Sora'; font-size:0.95rem; margin-bottom:16px; box-sizing:border-box; resize:vertical;"></textarea>
+
+      <button id="cfSubmit" style="font-family:'Sora'; font-weight:600; font-size:0.9rem; cursor:pointer; border:none; border-radius:100px; padding:11px 24px; background:linear-gradient(120deg, #3fb0ac, #6c5b9e); color:#fff;">Send message</button>
+      <div id="cfMsg" style="font-size:0.85rem; margin-top:10px;"></div>
+    </div>
   </div>
 </section>
+
+<script>
+  (function(){
+    const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds";
+
+    const btn = document.getElementById('cfSubmit');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+      const msg = document.getElementById('cfMsg');
+      const name = document.getElementById('cfName').value.trim();
+      const email = document.getElementById('cfEmail').value.trim();
+      const phone = document.getElementById('cfPhone').value.trim();
+      const message = document.getElementById('cfMessage').value.trim();
+
+      if (!name || !email || !message) {
+        msg.textContent = 'Please fill in your name, email, and a message.';
+        msg.style.color = '#a5445a';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/contact-form`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ name, email, phone, message })
+        });
+        const result = await res.json();
+
+        if (!res.ok) {
+          msg.textContent = result.error || 'Something went wrong — please try WhatsApp or email instead.';
+          msg.style.color = '#a5445a';
+          btn.disabled = false;
+          btn.textContent = 'Send message';
+          return;
+        }
+
+        document.getElementById('contactFormCard').innerHTML =
+          '<p style="text-align:center; padding:20px 0; color:#2c8e8f; font-weight:600;">Thanks — your message has been sent. Mags will be in touch soon.</p>';
+      } catch (err) {
+        console.error(err);
+        msg.textContent = 'Something went wrong — please try WhatsApp or email instead.';
+        msg.style.color = '#a5445a';
+        btn.disabled = false;
+        btn.textContent = 'Send message';
+      }
+    });
+  })();
+</script>
 
 <section id="cancellation-policy" style="padding:60px 0;">
   <div class="wrap" style="max-width:720px;">
