@@ -48,6 +48,11 @@
   .slot .price{ opacity:0.7; font-weight:400; margin-left:6px; }
   .empty{ color:#786d94; font-size:0.92rem; }
   .loading{ color:#786d94; }
+  .back-link{
+    display:inline-flex; align-items:center; gap:6px; color:var(--violet);
+    text-decoration:none; font-size:0.88rem; font-weight:600; margin-bottom:20px;
+  }
+  .back-link:hover{ text-decoration:underline; }
   .residency{
     display:flex; flex-direction:column; align-items:stretch; gap:8px; margin-bottom:32px;
     padding:14px 18px; background:#fff; border:1px solid var(--line); border-radius:12px;
@@ -103,6 +108,7 @@
 <body>
 
 <div class="wrap">
+  <a href="/" class="back-link">&larr; Back to homepage</a>
   <h1>Book a session</h1>
   <p class="lede">Pick a time below. Slots update instantly and are held for you for 30 minutes while you pay. Free cancellation or rescheduling up to 48 hours before your session — you'll get a personal link to manage it after booking.</p>
 
