@@ -79,6 +79,16 @@
   .stat{ flex:1; min-width:120px; }
   .stat .num{ font-family:'Fraunces', serif; font-size:1.7rem; font-weight:500; color:var(--dusk); }
   .stat .label{ font-size:0.8rem; color:#786d94; }
+  .youth-row{
+    padding:12px 4px; border-bottom:1px solid var(--line); font-size:0.9rem;
+  }
+  .youth-row:last-child{ border-bottom:none; }
+  .youth-row .top-line{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .youth-row .meta{ color:#786d94; font-size:0.85rem; }
+  .status-select{
+    font-family:'Sora'; font-size:0.78rem; font-weight:600; border:1px solid var(--line);
+    border-radius:100px; padding:4px 10px; background:#fff; color:var(--dusk);
+  }
 </style>
 </head>
 <body>
@@ -167,6 +177,12 @@
       <div id="slotList"><p class="empty">Loading…</p></div>
     </div>
 
+    <div class="card">
+      <h2>Youth service registrations</h2>
+      <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">People who've registered interest in the free 13–18 counselling pilot.</p>
+      <div id="youthList"><p class="empty">Loading…</p></div>
+    </div>
+
   </div>
 
 </div>
@@ -188,6 +204,7 @@
       adminPanel.style.display = 'block';
       loadSlots();
       loadDashboard();
+      loadYouthRegistrations();
     } else {
       loginPanel.style.display = 'block';
       adminPanel.style.display = 'none';
@@ -227,6 +244,47 @@
         <div class="stat"><div class="num">${inperson} / ${online}</div><div class="label">In person / Online</div></div>
       </div>
     `;
+  }
+
+  async function loadYouthRegistrations(){
+    const container = document.getElementById('youthList');
+    const { data, error } = await db
+      .from('youth_interest')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      container.innerHTML = `<p class="empty">Couldn't load registrations: ${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      container.innerHTML = `<p class="empty">No registrations yet.</p>`;
+      return;
+    }
+
+    container.innerHTML = data.map(r => `
+      <div class="youth-row">
+        <div class="top-line">
+          <strong>${r.young_person_name} (${r.young_person_age})</strong>
+          <select class="status-select" data-id="${r.id}">
+            <option value="new" ${r.status === 'new' ? 'selected' : ''}>New</option>
+            <option value="contacted" ${r.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+            <option value="waitlisted" ${r.status === 'waitlisted' ? 'selected' : ''}>Waitlisted</option>
+            <option value="declined" ${r.status === 'declined' ? 'selected' : ''}>Declined</option>
+          </select>
+        </div>
+        <div class="meta">
+          Parent/guardian: ${r.parent_name} · ${r.contact_email}${r.contact_phone ? ` · ${r.contact_phone}` : ''}
+        </div>
+        ${r.notes ? `<div class="meta" style="margin-top:4px;">"${r.notes}"</div>` : ''}
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.status-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        await db.from('youth_interest').update({ status: sel.value }).eq('id', sel.dataset.id);
+      });
+    });
   }
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
