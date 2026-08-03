@@ -234,11 +234,13 @@
     const online = booked.filter(r => r.session_format === 'online').length;
     const inperson = booked.filter(r => r.session_format === 'inperson').length;
     const grossIncome = booked.reduce((sum, r) => sum + (r.price_pence || 0), 0);
+    const refunded = cancelled.reduce((sum, r) => sum + (r.price_pence || 0), 0);
+    const netIncome = grossIncome - refunded;
 
     container.innerHTML = `
       <div class="stat-grid">
         <div class="stat"><div class="num">${booked.length}</div><div class="label">Sessions booked</div></div>
-        <div class="stat"><div class="num">£${(grossIncome/100).toFixed(0)}</div><div class="label">Gross income</div></div>
+        <div class="stat"><div class="num">£${(netIncome/100).toFixed(0)}</div><div class="label">Net income</div></div>
         <div class="stat"><div class="num">${cancelled.length}</div><div class="label">Cancelled</div></div>
         <div class="stat"><div class="num">${rescheduled.length}</div><div class="label">Rescheduled</div></div>
         <div class="stat"><div class="num">${inperson} / ${online}</div><div class="label">In person / Online</div></div>
