@@ -114,6 +114,24 @@
     </select>
   </div>
 
+  <div class="residency" id="firstSessionCard">
+    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+      <input type="checkbox" id="firstSessionToggle" style="width:auto; margin:0;">
+      This is my first ever session with MindZone (free)
+    </label>
+    <div id="firstSessionFields" style="display:none; margin-top:14px;">
+      <label for="fsName">Full name</label>
+      <input type="text" id="fsName" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+      <label for="fsEmail">Email</label>
+      <input type="email" id="fsEmail" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+      <label for="fsFormat">Online or in person?</label>
+      <select id="fsFormat" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:100px; font-family:'Sora'; font-weight:600; margin-bottom:4px; box-sizing:border-box;">
+        <option value="inperson">In person — Counselling Cabin, Alexandria</option>
+        <option value="online">Online</option>
+      </select>
+    </div>
+  </div>
+
   <div class="calendar">
     <div class="cal-header">
       <button id="calPrev" aria-label="Previous month">‹</button>
@@ -147,7 +165,11 @@
   function currentResidency(){
     return document.getElementById('residency').value; // 'resident' or 'nonresident'
   }
+  function isFirstSessionClaimed(){
+    return document.getElementById('firstSessionToggle').checked;
+  }
   function priceForSlot(s){
+    if (isFirstSessionClaimed()) return 0;
     return currentResidency() === 'resident' ? s.price_pence_resident : s.price_pence_nonresident;
   }
 
@@ -297,9 +319,29 @@
 
   document.getElementById('residency').addEventListener('change', renderSlots);
 
+  document.getElementById('firstSessionToggle').addEventListener('change', (e) => {
+    document.getElementById('firstSessionFields').style.display = e.target.checked ? 'block' : 'none';
+    document.getElementById('residency').disabled = e.target.checked;
+    renderSlots();
+  });
+
   async function bookSlot(slotId, btn){
+    const claimingFirstSession = isFirstSessionClaimed();
+    let firstSessionPayload = {};
+
+    if (claimingFirstSession) {
+      const fsName = document.getElementById('fsName').value.trim();
+      const fsEmail = document.getElementById('fsEmail').value.trim();
+      const fsFormat = document.getElementById('fsFormat').value;
+      if (!fsName || !fsEmail) {
+        alert('Please fill in your name and email to claim your free first session.');
+        return;
+      }
+      firstSessionPayload = { first_session: true, client_name: fsName, client_email: fsEmail, session_format: fsFormat };
+    }
+
     btn.disabled = true;
-    btn.textContent = "Starting checkout…";
+    btn.textContent = claimingFirstSession ? "Booking…" : "Starting checkout…";
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/bright-responder`, {
         method: 'POST',
@@ -308,12 +350,14 @@
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({ slot_id: slotId, residency: currentResidency() })
+        body: JSON.stringify({ slot_id: slotId, residency: currentResidency(), ...firstSessionPayload })
       });
       const result = await res.json();
       if (!res.ok) {
         alert(result.error || "That slot just became unavailable.");
         loadSlots();
+        btn.disabled = false;
+        btn.textContent = claimingFirstSession ? "Book free session" : "Book";
         return;
       }
       window.location.href = result.redirect;
