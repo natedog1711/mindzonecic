@@ -91,6 +91,38 @@
     font-family:'Sora'; font-size:0.78rem; font-weight:600; border:1px solid var(--line);
     border-radius:100px; padding:4px 10px; background:#fff; color:var(--dusk);
   }
+  .card-header-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .card-header-row h2{ margin-bottom:0; }
+  button.small{ padding:7px 16px; font-size:0.82rem; }
+  .admin-cal{ margin-bottom:20px; }
+  .admin-cal .cal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .admin-cal .cal-header h4{ font-family:'Fraunces', serif; font-weight:500; font-size:0.95rem; color:var(--dusk); }
+  .admin-cal .cal-nav button{
+    width:30px; height:30px; padding:0; border-radius:50%; border:1px solid var(--line);
+    background:#fff; color:var(--dusk); font-size:0.9rem;
+  }
+  .admin-cal .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; text-align:center; }
+  .admin-cal .cal-dow{ font-size:0.65rem; font-weight:700; color:#a89dbd; text-transform:uppercase; padding:2px 0 6px; }
+  .admin-cal .cal-day{
+    aspect-ratio:1; min-height:32px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius:8px; font-size:0.78rem; font-weight:600; color:var(--ink); cursor:pointer; border:none;
+    background:none; font-family:'Sora'; position:relative;
+  }
+  .admin-cal .cal-day.empty{ visibility:hidden; cursor:default; }
+  .admin-cal .cal-day.has-activity:hover{ background:var(--mist); }
+  .admin-cal .cal-day.selected{ background:linear-gradient(120deg, var(--teal), var(--violet)); color:#fff; }
+  .admin-cal .dots{ display:flex; gap:2px; margin-top:2px; }
+  .admin-cal .dot{ width:4px; height:4px; border-radius:50%; }
+  .admin-cal .dot.available{ background:var(--teal); }
+  .admin-cal .dot.booked{ background:var(--violet); }
+  .admin-cal .cal-day.selected .dot{ background:#fff; }
+  .clear-filter-btn{
+    background:none; border:none; color:var(--violet); font-size:0.83rem; font-weight:600;
+    text-decoration:underline; cursor:pointer; padding:0; margin-bottom:16px; display:inline-block;
+  }
+  .search-result-row{ padding:10px 4px; border-bottom:1px solid var(--line); font-size:0.88rem; }
+  .search-result-row:last-child{ border-bottom:none; }
+  .search-result-row .meta{ color:#786d94; font-size:0.82rem; margin-top:2px; }
 </style>
 </head>
 <body>
@@ -180,8 +212,54 @@
     </div>
 
     <div class="card">
-      <h2>Upcoming times</h2>
+      <h2>Block a date range</h2>
+      <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">Taking time off? Clear all your open (not-yet-booked) times in a range at once. Already-booked sessions are never touched.</p>
+      <div class="row">
+        <div>
+          <label for="blockStart">From date</label>
+          <input type="date" id="blockStart">
+        </div>
+        <div>
+          <label for="blockEnd">To date</label>
+          <input type="date" id="blockEnd">
+        </div>
+      </div>
+      <button class="ghost" id="blockBtn">Block this range</button>
+      <div id="blockMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Search bookings</h2>
+      <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">Find a client's booking history by name or email.</p>
+      <div class="row" style="align-items:flex-end;">
+        <div>
+          <label for="searchQuery">Name or email</label>
+          <input type="text" id="searchQuery" style="margin-bottom:0;">
+        </div>
+        <div style="flex:0;">
+          <button id="searchBtn" style="margin-bottom:16px;">Search</button>
+        </div>
+      </div>
+      <div id="searchResults"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header-row">
+        <h2>Upcoming times</h2>
+        <button class="ghost small" id="exportBtn">Export CSV</button>
+      </div>
       <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">Booked times are locked and can't be removed here — only times nobody has paid for yet.</p>
+
+      <div class="admin-cal">
+        <div class="cal-header">
+          <div class="cal-nav"><button id="adminCalPrev">&lsaquo;</button></div>
+          <h4 id="adminCalLabel"></h4>
+          <div class="cal-nav"><button id="adminCalNext">&rsaquo;</button></div>
+        </div>
+        <div class="cal-grid" id="adminCalGrid"></div>
+      </div>
+      <button class="clear-filter-btn" id="clearDateFilter" style="display:none;">Show all upcoming dates</button>
+
       <div id="slotList"><p class="empty">Loading…</p></div>
     </div>
 
@@ -225,6 +303,11 @@
       .select('*')
       .gte('created_at', monthStart);
 
+    const { count: visitCount } = await db
+      .from('page_views')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', monthStart);
+
     if (error) {
       container.innerHTML = `<p class="empty">Couldn't load stats: ${error.message}</p>`;
       return;
@@ -246,6 +329,7 @@
         <div class="stat"><div class="num">${cancelled.length}</div><div class="label">Cancelled</div></div>
         <div class="stat"><div class="num">${rescheduled.length}</div><div class="label">Rescheduled</div></div>
         <div class="stat"><div class="num">${inperson} / ${online}</div><div class="label">In person / Online</div></div>
+        <div class="stat"><div class="num">${visitCount ?? '—'}</div><div class="label">Site visits</div></div>
       </div>
     `;
   }
@@ -314,6 +398,10 @@
     return new Date(d + "T00:00:00").toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
   }
 
+  let latestAdminSlots = [];
+  let adminSelectedDate = null;
+  let adminCalMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
   async function loadSlots(){
     const container = document.getElementById('slotList');
     const { data, error } = await db
@@ -326,13 +414,93 @@
       container.innerHTML = `<p class="empty">Couldn't load times: ${error.message}</p>`;
       return;
     }
-    if (!data.length) {
-      container.innerHTML = `<p class="empty">No upcoming times yet — add some above.</p>`;
+
+    latestAdminSlots = data || [];
+    renderAdminCalendar();
+    renderSlotList();
+  }
+
+  function renderAdminCalendar(){
+    const grid = document.getElementById('adminCalGrid');
+    const label = document.getElementById('adminCalLabel');
+    label.textContent = adminCalMonth.toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+
+    const year = adminCalMonth.getFullYear();
+    const month = adminCalMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayStr = new Date().toISOString().slice(0,10);
+
+    const byDate = {};
+    latestAdminSlots.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
+
+    const dowLabels = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+    let html = dowLabels.map(d => `<div class="cal-dow">${d}</div>`).join('');
+    for (let i = 0; i < startOffset; i++) html += `<div class="cal-day empty"></div>`;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const daySlots = byDate[dateStr] || [];
+      const hasAvailable = daySlots.some(s => s.status === 'available');
+      const hasBooked = daySlots.some(s => s.status === 'booked');
+      const isPast = dateStr < todayStr;
+      const isSelected = dateStr === adminSelectedDate;
+      const classes = ['cal-day'];
+      if (daySlots.length && !isPast) classes.push('has-activity');
+      if (isSelected) classes.push('selected');
+
+      html += `
+        <button class="${classes.join(' ')}" data-date="${dateStr}" ${(!daySlots.length || isPast) ? 'disabled' : ''}>
+          ${day}
+          <span class="dots">
+            ${hasAvailable ? '<span class="dot available"></span>' : ''}
+            ${hasBooked ? '<span class="dot booked"></span>' : ''}
+          </span>
+        </button>
+      `;
+    }
+    grid.innerHTML = html;
+
+    grid.querySelectorAll('.cal-day.has-activity').forEach(btn => {
+      btn.addEventListener('click', () => {
+        adminSelectedDate = btn.dataset.date === adminSelectedDate ? null : btn.dataset.date;
+        renderAdminCalendar();
+        renderSlotList();
+      });
+    });
+  }
+
+  document.getElementById('adminCalPrev').addEventListener('click', () => {
+    adminCalMonth = new Date(adminCalMonth.getFullYear(), adminCalMonth.getMonth() - 1, 1);
+    renderAdminCalendar();
+  });
+  document.getElementById('adminCalNext').addEventListener('click', () => {
+    adminCalMonth = new Date(adminCalMonth.getFullYear(), adminCalMonth.getMonth() + 1, 1);
+    renderAdminCalendar();
+  });
+  document.getElementById('clearDateFilter').addEventListener('click', () => {
+    adminSelectedDate = null;
+    renderAdminCalendar();
+    renderSlotList();
+  });
+
+  function renderSlotList(){
+    const container = document.getElementById('slotList');
+    const clearBtn = document.getElementById('clearDateFilter');
+    clearBtn.style.display = adminSelectedDate ? 'inline-block' : 'none';
+
+    const visible = adminSelectedDate
+      ? latestAdminSlots.filter(s => s.slot_date === adminSelectedDate)
+      : latestAdminSlots;
+
+    if (!visible.length) {
+      container.innerHTML = `<p class="empty">${adminSelectedDate ? 'Nothing on that date.' : 'No upcoming times yet — add some above.'}</p>`;
       return;
     }
 
     const byDate = {};
-    data.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
+    visible.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
 
     container.innerHTML = Object.entries(byDate).map(([date, slots]) => `
       <div class="day-group">
@@ -411,6 +579,105 @@
     msg.textContent = `Added ${rows.length} new time slot(s).`;
     msg.className = 'msg success';
     loadSlots();
+  });
+
+  document.getElementById('blockBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('blockMsg');
+    msg.textContent = '';
+    const startDate = document.getElementById('blockStart').value;
+    const endDate = document.getElementById('blockEnd').value;
+
+    if (!startDate || !endDate) {
+      msg.textContent = 'Please choose both dates.';
+      msg.className = 'msg error';
+      return;
+    }
+    if (!confirm(`Remove all open (not-booked) times from ${startDate} to ${endDate}?`)) return;
+
+    document.getElementById('blockBtn').disabled = true;
+    const { error, count } = await db
+      .from('slots')
+      .delete({ count: 'exact' })
+      .eq('status', 'available')
+      .gte('slot_date', startDate)
+      .lte('slot_date', endDate);
+    document.getElementById('blockBtn').disabled = false;
+
+    if (error) {
+      msg.textContent = error.message;
+      msg.className = 'msg error';
+      return;
+    }
+    msg.textContent = `Cleared ${count ?? 'the'} open time(s) in that range. Already-booked sessions were left untouched.`;
+    msg.className = 'msg success';
+    loadSlots();
+  });
+
+  document.getElementById('searchBtn').addEventListener('click', async () => {
+    const query = document.getElementById('searchQuery').value.trim();
+    const results = document.getElementById('searchResults');
+    if (!query) { results.innerHTML = ''; return; }
+
+    results.innerHTML = `<p class="empty">Searching…</p>`;
+    const { data, error } = await db
+      .from('bookings_log')
+      .select('*')
+      .or(`client_name.ilike.%${query}%,client_email.ilike.%${query}%`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      results.innerHTML = `<p class="empty">Couldn't search: ${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      results.innerHTML = `<p class="empty">No bookings found for "${query}".</p>`;
+      return;
+    }
+
+    results.innerHTML = data.map(r => `
+      <div class="search-result-row">
+        <strong>${r.client_name || '(no name)'}</strong> — ${r.action}
+        <div class="meta">
+          ${r.client_email || ''} · ${formatDate(r.slot_date)} at ${r.slot_time ? r.slot_time.slice(0,5) : ''}
+          ${r.price_pence != null ? ` · £${(r.price_pence/100).toFixed(0)}` : ''}
+          ${r.session_format ? ` · ${r.session_format === 'online' ? 'Online' : 'In person'}` : ''}
+        </div>
+      </div>
+    `).join('');
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('exportBtn');
+    btn.disabled = true;
+    btn.textContent = 'Exporting…';
+
+    const { data, error } = await db
+      .from('bookings_log')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    btn.disabled = false;
+    btn.textContent = 'Export CSV';
+
+    if (error) { alert('Could not export: ' + error.message); return; }
+
+    const headers = ['created_at','action','client_name','client_email','session_format','slot_date','slot_time','price_pence'];
+    const csvRows = [headers.join(',')];
+    (data || []).forEach(r => {
+      const row = headers.map(h => {
+        const val = r[h] == null ? '' : String(r[h]).replace(/"/g, '""');
+        return `"${val}"`;
+      });
+      csvRows.push(row.join(','));
+    });
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mindzone-bookings-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   });
 
   checkSession();
