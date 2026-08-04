@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
+<link rel="icon" type="image/png" href="/logo.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Privacy Policy — MindZone</title>
+<title>Free counselling for young people — MindZone</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#241a35; --dusk:#3a2c58; --mist:#f3eef8; --paper:#fbf8fc;
-    --teal:#3fb0ac; --violet:#6c5b9e; --line: rgba(36,26,53,0.12); --max: 720px;
+    --teal:#3fb0ac; --teal-deep:#2c8e8f; --violet:#6c5b9e; --rose:#e97c93;
+    --line: rgba(36,26,53,0.12); --max: 680px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{ font-family:'Sora', sans-serif; color:var(--ink); background:var(--paper); line-height:1.65; }
@@ -20,57 +22,178 @@
     text-decoration:none; font-size:0.88rem; font-weight:600; margin-bottom:20px;
   }
   .back-link:hover{ text-decoration:underline; }
+  .tag{
+    display:inline-block; background:linear-gradient(120deg, var(--teal), var(--violet));
+    color:#fff; font-size:0.75rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase;
+    padding:5px 14px; border-radius:100px; margin-bottom:16px;
+  }
   h1{
     font-family:'Fraunces', serif; font-weight:500; font-style:italic;
-    font-size:clamp(1.6rem, 4vw, 2.1rem); margin-bottom:8px; color:var(--dusk);
+    font-size:clamp(1.7rem, 4.5vw, 2.3rem); margin-bottom:14px; color:var(--dusk);
   }
-  p.updated{ color:#786d94; font-size:0.85rem; margin-bottom:30px; }
-  h2{ font-family:'Fraunces', serif; font-size:1.15rem; font-weight:500; margin:30px 0 12px; color:var(--dusk); }
+  h2{ font-family:'Fraunces', serif; font-size:1.15rem; font-weight:500; margin:28px 0 12px; color:var(--dusk); }
   p{ color:#3a3350; margin-bottom:12px; }
   ul{ margin:0 0 12px 20px; color:#3a3350; }
   li{ margin-bottom:6px; }
-  strong{ color:var(--dusk); }
-  a{ color:var(--violet); }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:26px; margin:28px 0; }
+  label{ display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px; color:var(--dusk); }
+  input, textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    font-family:'Sora'; font-size:0.95rem; margin-bottom:16px;
+  }
+  textarea{ resize:vertical; min-height:70px; }
+  .row{ display:flex; gap:16px; }
+  .row > div{ flex:1; }
+  button{
+    font-family:'Sora'; font-weight:600; font-size:0.9rem; cursor:pointer;
+    border:none; border-radius:100px; padding:12px 24px;
+    background:linear-gradient(120deg, var(--teal), var(--violet)); color:#fff;
+  }
+  button:disabled{ opacity:0.5; cursor:not-allowed; }
+  .msg{ font-size:0.88rem; margin-top:12px; }
+  .msg.error{ color:#a5445a; }
+  .support-note{
+    background:var(--mist); border-radius:12px; padding:16px 18px; font-size:0.88rem;
+    color:#544a68; margin:28px 0;
+  }
+  .success-card{ text-align:center; padding:40px 26px; }
+  .partner-box{
+    border:1px solid var(--line); border-radius:14px; padding:22px; margin-top:14px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .partner-box a{
+    background:transparent; border:1px solid var(--line); color:var(--dusk);
+    text-decoration:none; padding:10px 20px; border-radius:100px; font-weight:600; font-size:0.88rem;
+  }
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <a href="/" class="back-link">&larr; Back to homepage</a>
-  <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: August 2026</p>
+  <span class="tag">Coming soon — August/September 2026</span>
+  <h1>Free counselling for young people, right here in our community.</h1>
+  <p>MindZone is launching a free partnership community counselling pilot for young people aged <strong>13–18</strong> in Haldane and the surrounding areas — a safe, confidential space to talk, get support, and look after their mental health and wellbeing.</p>
 
-  <p>MindZone Community Counselling &amp; Psychotherapy — Scotland CIC ("MindZone", "we", "us") takes your privacy seriously. This page explains what information we collect through this website, why, and how it's kept safe.</p>
+  <div class="support-note">
+    This page is for registering interest in the upcoming service — it isn't for urgent support. If a young person is in crisis or at risk right now, please contact <strong>Childline free on 0800 1111</strong>, <strong>Samaritans free on 116 123</strong>, or call <strong>999</strong>.
+  </div>
 
-  <h2>What we collect, and why</h2>
-  <p><strong>When you book a session:</strong> your name, email address, whether you're a West Dunbartonshire resident, whether your session is online or in person, and — if you choose to share it — a short note on what you'd like the session to focus on. This is used to confirm and manage your booking, take payment, and let you or us reschedule or cancel it.</p>
-  <p><strong>When you send an enquiry:</strong> your name, email, optional phone number, and your message — used only to reply to you.</p>
-  <p><strong>When you register interest in the youth counselling service:</strong> the young person's first name and age, and a parent/guardian's name and contact details, plus any brief note you choose to add — used only to get in touch about the service.</p>
-  <p><strong>Payments:</strong> we never see or store your card details. Payment is handled entirely by <a href="https://stripe.com/gb/privacy" target="_blank" rel="noopener noreferrer">Stripe</a>, a regulated payment provider.</p>
-
-  <h2>Where it's stored</h2>
-  <p>Booking and enquiry information is stored securely with <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">Supabase</a>, our database provider. Confirmation and notification emails are sent via Google/Gmail. We don't sell, rent, or share your information with anyone else, other than these providers who help us run the service.</p>
-
-  <h2>How long we keep it</h2>
-  <p>We keep booking records for as long as reasonably needed to manage your ongoing care and meet our professional and legal obligations. If you cancel a booking, your contact details are removed from that record at the point of cancellation.</p>
-
-  <h2>Children's data</h2>
-  <p>For the youth counselling service (ages 13–18), we only collect information provided by a parent or guardian at the point of registering interest, and use it solely to make contact about that service.</p>
-
-  <h2>Your rights</h2>
+  <h2>What's on offer</h2>
   <ul>
-    <li>You can ask us what information we hold about you</li>
-    <li>You can ask us to correct or delete it</li>
-    <li>You can withdraw consent for us to contact you at any time</li>
+    <li>Free, easy-to-access counselling sessions for young people (assessment-based — a waiting list may apply if demand is high)</li>
+    <li>A friendly, trusted, supportive environment to talk, heal, grow and thrive</li>
+    <li>Professional support for emotional, mental health and wellbeing needs</li>
   </ul>
-  <p>To do any of these, just get in touch using the details below.</p>
+  <p>If interest grows, MindZone aims to build on this project through fundraising, volunteering, and further community partnerships — so no local young person has to struggle alone while waiting on ever-increasing NHS lists.</p>
 
-  <h2>Cookies</h2>
-  <p>This site does not use tracking or advertising cookies.</p>
+  <div class="card" id="formCard">
+    <h2 style="margin-top:0;">Register interest</h2>
+    <p style="font-size:0.88rem; color:#786d94; margin-bottom:20px;">For a parent/guardian to complete on behalf of a young person aged 13–18. We'll be in touch to talk through next steps.</p>
 
-  <h2>Contact us</h2>
-  <p>If you have any questions about this policy or how your information is handled, please <a href="/#contact">get in touch</a> or message us on <a href="https://wa.me/447734456367" target="_blank" rel="noopener noreferrer">WhatsApp</a>.</p>
+    <div class="row">
+      <div>
+        <label for="youngPersonName">Young person's first name</label>
+        <input type="text" id="youngPersonName">
+      </div>
+      <div>
+        <label for="youngPersonAge">Age</label>
+        <input type="number" id="youngPersonAge" min="13" max="18">
+      </div>
+    </div>
+
+    <label for="parentName">Parent/guardian name</label>
+    <input type="text" id="parentName">
+
+    <div class="row">
+      <div>
+        <label for="contactEmail">Contact email</label>
+        <input type="email" id="contactEmail">
+      </div>
+      <div>
+        <label for="contactPhone">Contact phone (optional)</label>
+        <input type="tel" id="contactPhone">
+      </div>
+    </div>
+
+    <label for="notes">Anything you'd like us to know? (optional)</label>
+    <textarea id="notes" placeholder="Keep this brief — no need for details, just anything that helps us get in touch appropriately."></textarea>
+
+    <button id="submitBtn">Register interest</button>
+    <div id="formMsg" class="msg"></div>
+  </div>
+
+  <div class="partner-box">
+    <div>
+      <strong>Local groups &amp; funders</strong><br>
+      <span style="font-size:0.88rem; color:#786d94;">We'd love to collaborate — reach out to explore partnership opportunities.</span>
+    </div>
+    <a href="mailto:mindzone.scot@outlook.com?subject=Youth%20service%20partnership%20enquiry">Get in touch</a>
+  </div>
 </div>
 
+<script>
+  const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds";
+
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('formMsg');
+    msg.textContent = '';
+    msg.className = 'msg';
+
+    const payload = {
+      young_person_name: document.getElementById('youngPersonName').value.trim(),
+      young_person_age: document.getElementById('youngPersonAge').value,
+      parent_name: document.getElementById('parentName').value.trim(),
+      contact_email: document.getElementById('contactEmail').value.trim(),
+      contact_phone: document.getElementById('contactPhone').value.trim(),
+      notes: document.getElementById('notes').value.trim(),
+    };
+
+    if (!payload.young_person_name || !payload.parent_name || !payload.contact_email || !payload.young_person_age) {
+      msg.textContent = 'Please fill in the young person\'s name and age, the parent/guardian name, and a contact email.';
+      msg.className = 'msg error';
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/youth-interest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+
+      if (!res.ok) {
+        msg.textContent = result.error || 'Something went wrong — please try again.';
+        msg.className = 'msg error';
+        btn.disabled = false;
+        btn.textContent = 'Register interest';
+        return;
+      }
+
+      document.getElementById('formCard').innerHTML = `
+        <div class="success-card">
+          <h2 style="margin-top:0;">Thank you</h2>
+          <p>We've received your registration and will be in touch soon to talk through next steps.</p>
+        </div>
+      `;
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Something went wrong — please try again.';
+      msg.className = 'msg error';
+      btn.disabled = false;
+      btn.textContent = 'Register interest';
+    }
+  });
+</script>
 </body>
 </html>
