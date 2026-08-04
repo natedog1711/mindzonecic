@@ -771,5 +771,25 @@
   </div>
 </footer>
 
+
+<script>
+  // Simple, privacy-friendly visit counter — no cookies, no IP, no personal
+  // data at all, just "this page was viewed at this time."
+  (function(){
+    try {
+      fetch('https://mpxyfbpxyzcorujgsotn.supabase.co/rest/v1/page_views', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ path: window.location.pathname })
+      }).catch(function(){});
+    } catch(e) {}
+  })();
+</script>
+
 </body>
 </html>
