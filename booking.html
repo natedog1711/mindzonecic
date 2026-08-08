@@ -126,17 +126,21 @@
       <input type="checkbox" id="firstSessionToggle" style="width:auto; margin:0;">
       This is my first ever contact with MindZone (free initial 30 min call)
     </label>
-    <p style="font-size:0.82rem; color:#786d94; margin-top:8px; margin-bottom:0;">A short, no-cost conversation to talk through what you need and check whether counselling with MindZone is the right fit — or point you toward somewhere that might suit you better.</p>
+    <p style="font-size:0.82rem; color:#786d94; margin-top:8px; margin-bottom:0;">A short, no-cost conversation to talk through what you need and check whether counselling with MindZone is the right fit. This call is held online, by phone or video.</p>
     <div id="firstSessionFields" style="display:none; margin-top:14px;">
       <label for="fsName">Full name</label>
       <input type="text" id="fsName" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
       <label for="fsEmail">Email</label>
       <input type="email" id="fsEmail" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
-      <label for="fsFormat">Online or in person?</label>
-      <select id="fsFormat" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:100px; font-family:'Sora'; font-weight:600; margin-bottom:4px; box-sizing:border-box;">
-        <option value="inperson">In person — Counselling Cabin, Alexandria</option>
-        <option value="online">Online</option>
+      <label for="fsContactMethod">Phone call or video call?</label>
+      <select id="fsContactMethod" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:100px; font-family:'Sora'; font-weight:600; margin-bottom:12px; box-sizing:border-box;">
+        <option value="phone">Phone call</option>
+        <option value="video">Video call</option>
       </select>
+      <div id="fsPhoneField">
+        <label for="fsPhone">Phone number</label>
+        <input type="tel" id="fsPhone" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:4px; box-sizing:border-box;">
+      </div>
     </div>
   </div>
 
@@ -333,6 +337,13 @@
     renderSlots();
   });
 
+  function updatePhoneFieldVisibility(){
+    const method = document.getElementById('fsContactMethod').value;
+    document.getElementById('fsPhoneField').style.display = method === 'phone' ? 'block' : 'none';
+  }
+  document.getElementById('fsContactMethod').addEventListener('change', updatePhoneFieldVisibility);
+  updatePhoneFieldVisibility();
+
   async function bookSlot(slotId, btn){
     const claimingFirstSession = isFirstSessionClaimed();
     let firstSessionPayload = {};
@@ -340,12 +351,24 @@
     if (claimingFirstSession) {
       const fsName = document.getElementById('fsName').value.trim();
       const fsEmail = document.getElementById('fsEmail').value.trim();
-      const fsFormat = document.getElementById('fsFormat').value;
+      const fsContactMethod = document.getElementById('fsContactMethod').value;
+      const fsPhone = document.getElementById('fsPhone').value.trim();
       if (!fsName || !fsEmail) {
         alert('Please fill in your name and email to claim your free initial call.');
         return;
       }
-      firstSessionPayload = { first_session: true, client_name: fsName, client_email: fsEmail, session_format: fsFormat };
+      if (fsContactMethod === 'phone' && !fsPhone) {
+        alert('Please add a phone number so we can call you.');
+        return;
+      }
+      firstSessionPayload = {
+        first_session: true,
+        client_name: fsName,
+        client_email: fsEmail,
+        session_format: 'online',
+        contact_method: fsContactMethod,
+        client_phone: fsContactMethod === 'phone' ? fsPhone : null,
+      };
     }
 
     btn.disabled = true;
