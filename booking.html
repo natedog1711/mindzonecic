@@ -124,8 +124,9 @@
   <div class="residency" id="firstSessionCard">
     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
       <input type="checkbox" id="firstSessionToggle" style="width:auto; margin:0;">
-      This is my first ever session with MindZone (free)
+      This is my first ever contact with MindZone (free initial 30 min call)
     </label>
+    <p style="font-size:0.82rem; color:#786d94; margin-top:8px; margin-bottom:0;">A short, no-cost conversation to talk through what you need and check whether counselling with MindZone is the right fit — or point you toward somewhere that might suit you better.</p>
     <div id="firstSessionFields" style="display:none; margin-top:14px;">
       <label for="fsName">Full name</label>
       <input type="text" id="fsName" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
@@ -341,7 +342,7 @@
       const fsEmail = document.getElementById('fsEmail').value.trim();
       const fsFormat = document.getElementById('fsFormat').value;
       if (!fsName || !fsEmail) {
-        alert('Please fill in your name and email to claim your free first session.');
+        alert('Please fill in your name and email to claim your free initial call.');
         return;
       }
       firstSessionPayload = { first_session: true, client_name: fsName, client_email: fsEmail, session_format: fsFormat };
@@ -364,7 +365,7 @@
         alert(result.error || "That slot just became unavailable.");
         loadSlots();
         btn.disabled = false;
-        btn.textContent = claimingFirstSession ? "Book free session" : "Book";
+        btn.textContent = claimingFirstSession ? "Book free call" : "Book";
         return;
       }
       window.location.href = result.redirect;
