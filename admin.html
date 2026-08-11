@@ -259,6 +259,27 @@
     </div>
 
     <div class="card">
+      <h2>Custom form</h2>
+      <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">
+        Build any form you like at <a href="https://tally.so" target="_blank" rel="noopener">tally.so</a> (free, no coding needed), then paste the link here to put it live on your site at
+        <strong>mindzonecounselling.co.uk/form.html</strong> — update it anytime, no need to ask anyone for help.
+      </p>
+
+      <label for="formTitle">Form title (shown on the page)</label>
+      <input type="text" id="formTitle" placeholder="e.g. Client feedback">
+
+      <label for="formDescription">Short description (optional)</label>
+      <textarea id="formDescription" rows="2" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; font-size:0.95rem; margin-bottom:16px; box-sizing:border-box; resize:vertical;"></textarea>
+
+      <label for="formUrl">Form link (from Tally, Google Forms, etc.)</label>
+      <input type="url" id="formUrl" placeholder="https://tally.so/r/your-form-id">
+
+      <button id="saveFormBtn">Save</button>
+      <a href="/form.html" target="_blank" style="text-decoration:none; display:inline-block; padding:11px 22px; border-radius:100px; font-weight:600; font-size:0.9rem; margin-left:8px; border:1px solid var(--line); color:var(--dusk); background:transparent;">View live page</a>
+      <div id="formMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
       <div class="card-header-row">
         <h2>Upcoming times</h2>
         <button class="ghost small" id="exportBtn">Export CSV</button>
@@ -300,11 +321,57 @@
       loadSlots();
       loadDashboard();
       loadYouthRegistrations();
+      loadCustomForm();
     } else {
       loginPanel.style.display = 'block';
       adminPanel.style.display = 'none';
     }
   }
+
+  async function loadCustomForm(){
+    const { data } = await db.from('site_settings').select('*').in('key', ['custom_form_title','custom_form_description','custom_form_url']);
+    (data || []).forEach(row => {
+      if (row.key === 'custom_form_title') document.getElementById('formTitle').value = row.value || '';
+      if (row.key === 'custom_form_description') document.getElementById('formDescription').value = row.value || '';
+      if (row.key === 'custom_form_url') document.getElementById('formUrl').value = row.value || '';
+    });
+  }
+
+  document.getElementById('saveFormBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('formMsg');
+    msg.textContent = '';
+    const title = document.getElementById('formTitle').value.trim();
+    const description = document.getElementById('formDescription').value.trim();
+    const url = document.getElementById('formUrl').value.trim();
+
+    if (url && !/^https?:\/\//.test(url)) {
+      msg.textContent = 'The form link should start with https://';
+      msg.className = 'msg error';
+      return;
+    }
+
+    const btn = document.getElementById('saveFormBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const rows = [
+      { key: 'custom_form_title', value: title },
+      { key: 'custom_form_description', value: description },
+      { key: 'custom_form_url', value: url },
+    ];
+    const { error } = await db.from('site_settings').upsert(rows, { onConflict: 'key' });
+
+    btn.disabled = false;
+    btn.textContent = 'Save';
+
+    if (error) {
+      msg.textContent = error.message;
+      msg.className = 'msg error';
+      return;
+    }
+    msg.textContent = url ? 'Saved — your form is now live on the site.' : 'Saved — no form link set, so the page will show as empty.';
+    msg.className = 'msg success';
+  });
 
   async function loadDashboard(){
     const container = document.getElementById('dashboardStats');
