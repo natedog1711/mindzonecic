@@ -133,7 +133,7 @@
     backdrop-filter:blur(10px);
     transition:max-height 0.35s ease;
   }
-  .nav-mobile-panel.open{ max-height:400px; }
+  .nav-mobile-panel.open{ max-height:90vh; overflow-y:auto; }
   .nav-mobile-panel ul{
     list-style:none; display:flex; flex-direction:column;
     padding:8px 28px 20px;
@@ -369,7 +369,7 @@
 
   /* ---------- RESPONSIVE ---------- */
   @media (max-width:880px){
-    .nav ul{display:none;}
+    .nav .wrap > ul{display:none;}
     .nav > .wrap > .nav-cta{display:none;}
     .nav-toggle{display:flex;}
     .nav-mobile-panel{display:block;}
