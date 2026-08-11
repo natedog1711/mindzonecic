@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<link rel="icon" type="image/png" href="/logo.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forms — MindZone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#241a35; --dusk:#3a2c58; --violet:#6c5b9e; --teal:#3fb0ac; --paper:#fbf8fc; --line: rgba(36,26,53,0.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ font-family:'Sora', sans-serif; color:var(--ink); background:var(--paper); line-height:1.6; }
+  .wrap{max-width:760px; margin:0 auto; padding:50px 24px 100px;}
+  .back-link{
+    display:inline-flex; align-items:center; gap:6px; color:var(--violet);
+    text-decoration:none; font-size:0.88rem; font-weight:600; margin-bottom:20px;
+  }
+  .back-link:hover{ text-decoration:underline; }
+  h1{
+    font-family:'Fraunces', serif; font-weight:500; font-style:italic;
+    font-size:clamp(1.6rem, 4vw, 2.1rem); margin-bottom:10px; color:var(--dusk);
+  }
+  p.lede{ color:#544a68; margin-bottom:30px; }
+  .empty{ color:#786d94; padding:40px 0; text-align:center; }
+
+  details{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    margin-bottom:14px; overflow:hidden;
+  }
+  summary{
+    cursor:pointer; padding:18px 22px; font-weight:600; color:var(--dusk);
+    list-style:none; display:flex; justify-content:space-between; align-items:center;
+  }
+  summary::-webkit-details-marker{ display:none; }
+  summary::after{
+    content:'+'; font-size:1.3rem; color:var(--violet); font-weight:400; margin-left:12px; flex-shrink:0;
+  }
+  details[open] summary::after{ content:'−'; }
+  .form-desc{ padding:0 22px 16px; color:#786d94; font-size:0.9rem; margin-top:-8px; }
+  .form-frame-wrap{ padding:0 22px 22px; }
+  iframe{ width:100%; min-height:70vh; border:none; border-radius:10px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a href="/" class="back-link">&larr; Back to homepage</a>
+  <h1>Forms</h1>
+  <p class="lede">Tap a form below to open it.</p>
+  <div id="content"><p class="empty">Loading…</p></div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds";
+
+  async function load(){
+    const content = document.getElementById('content');
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/custom_forms?select=*&order=created_at.desc`, {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const forms = await res.json();
+
+      if (!forms || !forms.length) {
+        content.innerHTML = `<p class="empty">There are no forms here right now — check back soon.</p>`;
+        return;
+      }
+
+      content.innerHTML = forms.map((f, i) => `
+        <details ${i === 0 ? 'open' : ''}>
+          <summary>${f.title}</summary>
+          ${f.description ? `<p class="form-desc">${f.description}</p>` : ''}
+          <div class="form-frame-wrap">
+            <iframe data-src="${f.url}" title="${f.title}" loading="lazy"></iframe>
+          </div>
+        </details>
+      `).join('');
+
+      // Only actually load an iframe's src once its <details> is opened,
+      // so we're not silently loading every embedded form at once.
+      document.querySelectorAll('details').forEach(d => {
+        const frame = d.querySelector('iframe');
+        const loadFrame = () => { if (!frame.src) frame.src = frame.dataset.src; };
+        if (d.open) loadFrame();
+        d.addEventListener('toggle', () => { if (d.open) loadFrame(); });
+      });
+    } catch (err) {
+      console.error(err);
+      content.innerHTML = `<p class="empty">Couldn't load forms right now — please try again shortly.</p>`;
+    }
+  }
+
+  load();
+</script>
+
+<script>
+  (function(){
+    try {
+      fetch('https://mpxyfbpxyzcorujgsotn.supabase.co/rest/v1/page_views', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ path: window.location.pathname })
+      }).catch(function(){});
+    } catch(e) {}
+  })();
+</script>
+</body>
+</html>
