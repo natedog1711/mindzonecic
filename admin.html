@@ -259,13 +259,13 @@
     </div>
 
     <div class="card">
-      <h2>Custom form</h2>
+      <h2>Forms</h2>
       <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">
-        Build any form you like at <a href="https://tally.so" target="_blank" rel="noopener">tally.so</a> (free, no coding needed), then paste the link here to put it live on your site at
-        <strong>mindzonecounselling.co.uk/form.html</strong> — update it anytime, no need to ask anyone for help.
+        Build any form you like at <a href="https://tally.so" target="_blank" rel="noopener">tally.so</a> (free, no coding needed), then add it below to put it live on your site at
+        <strong>mindzonecounselling.co.uk/forms.html</strong> — add, remove, or update forms anytime, no need to ask anyone for help.
       </p>
 
-      <label for="formTitle">Form title (shown on the page)</label>
+      <label for="formTitle">Form title (this is what visitors click to open it)</label>
       <input type="text" id="formTitle" placeholder="e.g. Client feedback">
 
       <label for="formDescription">Short description (optional)</label>
@@ -274,9 +274,11 @@
       <label for="formUrl">Form link (from Tally, Google Forms, etc.)</label>
       <input type="url" id="formUrl" placeholder="https://tally.so/r/your-form-id">
 
-      <button id="saveFormBtn">Save</button>
-      <a href="/form.html" target="_blank" style="text-decoration:none; display:inline-block; padding:11px 22px; border-radius:100px; font-weight:600; font-size:0.9rem; margin-left:8px; border:1px solid var(--line); color:var(--dusk); background:transparent;">View live page</a>
+      <button id="saveFormBtn">Add form</button>
+      <a href="/forms.html" target="_blank" style="text-decoration:none; display:inline-block; padding:11px 22px; border-radius:100px; font-weight:600; font-size:0.9rem; margin-left:8px; border:1px solid var(--line); color:var(--dusk); background:transparent;">View live page</a>
       <div id="formMsg" class="msg"></div>
+
+      <div id="formsList" style="margin-top:20px;"></div>
     </div>
 
     <div class="card">
@@ -329,11 +331,28 @@
   }
 
   async function loadCustomForm(){
-    const { data } = await db.from('site_settings').select('*').in('key', ['custom_form_title','custom_form_description','custom_form_url']);
-    (data || []).forEach(row => {
-      if (row.key === 'custom_form_title') document.getElementById('formTitle').value = row.value || '';
-      if (row.key === 'custom_form_description') document.getElementById('formDescription').value = row.value || '';
-      if (row.key === 'custom_form_url') document.getElementById('formUrl').value = row.value || '';
+    const list = document.getElementById('formsList');
+    const { data, error } = await db.from('custom_forms').select('*').order('created_at', { ascending: false });
+    if (error) {
+      list.innerHTML = `<p class="empty">Couldn't load forms: ${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      list.innerHTML = `<p class="empty">No forms added yet.</p>`;
+      return;
+    }
+    list.innerHTML = data.map(f => `
+      <div class="slot-row">
+        <span><strong>${f.title}</strong>${f.description ? ` — ${f.description}` : ''}</span>
+        <button class="remove-btn" data-id="${f.id}">Remove</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Remove this form from the site?')) return;
+        await db.from('custom_forms').delete().eq('id', btn.dataset.id);
+        loadCustomForm();
+      });
     });
   }
 
@@ -344,7 +363,12 @@
     const description = document.getElementById('formDescription').value.trim();
     const url = document.getElementById('formUrl').value.trim();
 
-    if (url && !/^https?:\/\//.test(url)) {
+    if (!title || !url) {
+      msg.textContent = 'Please add a title and a form link.';
+      msg.className = 'msg error';
+      return;
+    }
+    if (!/^https?:\/\//.test(url)) {
       msg.textContent = 'The form link should start with https://';
       msg.className = 'msg error';
       return;
@@ -352,25 +376,24 @@
 
     const btn = document.getElementById('saveFormBtn');
     btn.disabled = true;
-    btn.textContent = 'Saving…';
+    btn.textContent = 'Adding…';
 
-    const rows = [
-      { key: 'custom_form_title', value: title },
-      { key: 'custom_form_description', value: description },
-      { key: 'custom_form_url', value: url },
-    ];
-    const { error } = await db.from('site_settings').upsert(rows, { onConflict: 'key' });
+    const { error } = await db.from('custom_forms').insert({ title, description: description || null, url });
 
     btn.disabled = false;
-    btn.textContent = 'Save';
+    btn.textContent = 'Add form';
 
     if (error) {
       msg.textContent = error.message;
       msg.className = 'msg error';
       return;
     }
-    msg.textContent = url ? 'Saved — your form is now live on the site.' : 'Saved — no form link set, so the page will show as empty.';
+    msg.textContent = 'Added — your form is now live on the site.';
     msg.className = 'msg success';
+    document.getElementById('formTitle').value = '';
+    document.getElementById('formDescription').value = '';
+    document.getElementById('formUrl').value = '';
+    loadCustomForm();
   });
 
   async function loadDashboard(){
