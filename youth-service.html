@@ -97,8 +97,8 @@
         <input type="text" id="youngPersonName">
       </div>
       <div>
-        <label for="youngPersonAge">Age</label>
-        <input type="number" id="youngPersonAge" min="13" max="18">
+        <label for="youngPersonDob">Date of birth</label>
+        <input type="date" id="youngPersonDob">
       </div>
     </div>
 
@@ -113,6 +113,19 @@
       <div>
         <label for="contactPhone">Contact phone (optional)</label>
         <input type="tel" id="contactPhone">
+      </div>
+    </div>
+
+    <div id="parentContactFields" style="display:none;">
+      <div class="row">
+        <div>
+          <label for="parentPhone">Parent/guardian contact number</label>
+          <input type="tel" id="parentPhone">
+        </div>
+        <div>
+          <label for="parentEmail">Parent/guardian email</label>
+          <input type="email" id="parentEmail">
+        </div>
       </div>
     </div>
 
@@ -136,22 +149,53 @@
   const SUPABASE_URL = "https://mpxyfbpxyzcorujgsotn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1weHlmYnB4eXpjb3J1amdzb3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MjgzOTYsImV4cCI6MjEwMTEwNDM5Nn0.3PnfLluxYcbgcWQ75sGbt89uOB51AEDddMH-AHYY0Ds";
 
+  function calculateAge(dobStr){
+    if (!dobStr) return null;
+    const dob = new Date(dobStr);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+    return age;
+  }
+
+  document.getElementById('youngPersonDob').addEventListener('input', (e) => {
+    const age = calculateAge(e.target.value);
+    document.getElementById('parentContactFields').style.display = (age !== null && age < 16) ? 'block' : 'none';
+  });
+
   document.getElementById('submitBtn').addEventListener('click', async () => {
     const msg = document.getElementById('formMsg');
     msg.textContent = '';
     msg.className = 'msg';
 
+    const dob = document.getElementById('youngPersonDob').value;
+    const age = calculateAge(dob);
+    const isUnder16 = age !== null && age < 16;
+
     const payload = {
       young_person_name: document.getElementById('youngPersonName').value.trim(),
-      young_person_age: document.getElementById('youngPersonAge').value,
+      date_of_birth: dob,
       parent_name: document.getElementById('parentName').value.trim(),
       contact_email: document.getElementById('contactEmail').value.trim(),
       contact_phone: document.getElementById('contactPhone').value.trim(),
+      parent_phone: isUnder16 ? document.getElementById('parentPhone').value.trim() : '',
+      parent_email: isUnder16 ? document.getElementById('parentEmail').value.trim() : '',
       notes: document.getElementById('notes').value.trim(),
     };
 
-    if (!payload.young_person_name || !payload.parent_name || !payload.contact_email || !payload.young_person_age) {
-      msg.textContent = 'Please fill in the young person\'s name and age, the parent/guardian name, and a contact email.';
+    if (!payload.young_person_name || !payload.parent_name || !payload.contact_email || !payload.date_of_birth) {
+      msg.textContent = 'Please fill in the young person\'s name and date of birth, the parent/guardian name, and a contact email.';
+      msg.className = 'msg error';
+      return;
+    }
+    if (age === null || age < 13 || age > 18) {
+      msg.textContent = 'This service is for young people aged 13 to 18.';
+      msg.className = 'msg error';
+      return;
+    }
+    if (isUnder16 && (!payload.parent_phone || !payload.parent_email)) {
+      msg.textContent = 'As the young person is under 16, please also add a parent/guardian contact number and email.';
       msg.className = 'msg error';
       return;
     }
