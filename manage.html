@@ -122,7 +122,7 @@
         <div class="detail-row"><span class="label">Session</span><span class="value">${booking.session_type}</span></div>
         <div class="detail-row"><span class="label">Date</span><span class="value">${formatDate(booking.slot_date)}</span></div>
         <div class="detail-row"><span class="label">Time</span><span class="value">${booking.slot_time.slice(0,5)}</span></div>
-        <div class="detail-row"><span class="label">Format</span><span class="value">${booking.session_format === 'online' ? 'Online' : 'In person'}</span></div>
+        <div class="detail-row"><span class="label">Format</span><span class="value">${booking.session_format === 'video' ? 'Video call (Microsoft Teams)' : 'Telephone'}</span></div>
 
         ${booking.can_change ? `
           <div class="actions">
@@ -137,7 +137,7 @@
           </p>
         `}
       </div>
-      <p class="policy">Cancellations or reschedules made at least 48 hours before your session are free, with any payment refunded automatically. Changes within 48 hours need to go through us directly.</p>
+      <p class="policy">Cancellations or reschedules made at least 48 hours before your consultation are free. Changes within 48 hours need to go through us directly.</p>
     `;
 
     if (booking.can_change) {
@@ -147,7 +147,7 @@
   }
 
   async function doCancel(){
-    if (!confirm('Cancel this session? Any payment will be refunded automatically.')) return;
+    if (!confirm('Cancel this consultation?')) return;
     const btn = document.getElementById('cancelBtn');
     btn.disabled = true;
     btn.textContent = 'Cancelling…';
@@ -160,7 +160,7 @@
       return;
     }
     document.getElementById('content').innerHTML = '';
-    showBanner('success', 'Your session has been cancelled and refunded. We hope to see you again soon.');
+    showBanner('success', 'Your consultation has been cancelled. We hope to hear from you again soon.');
   }
 
   async function loadRescheduleOptions(){
