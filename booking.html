@@ -24,7 +24,8 @@
     font-family:'Fraunces', serif; font-weight:500; font-style:italic;
     font-size:clamp(1.8rem, 4vw, 2.4rem); margin-bottom:10px; color:var(--dusk);
   }
-  p.lede{color:#544a68; font-weight:300; margin-bottom:36px;}
+  p.lede{color:#544a68; font-weight:300; margin-bottom:14px;}
+  p.lede:last-of-type{margin-bottom:36px;}
   .banner{
     padding:14px 18px; border-radius:12px; margin-bottom:28px; font-weight:600; font-size:0.92rem;
   }
@@ -104,59 +105,94 @@
     display:inline-block; font-size:0.85rem; font-weight:600; color:var(--violet);
     background:none; border:none; cursor:pointer; text-decoration:underline; margin-bottom:20px; padding:0;
   }
+  .gate-card{
+    background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px; margin-bottom:28px;
+  }
+  .gate-card input{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    font-family:'Sora'; font-size:0.95rem; margin-bottom:14px; box-sizing:border-box;
+  }
+  .gate-card button{
+    font-family:'Sora'; font-weight:600; font-size:0.9rem; cursor:pointer; border:none;
+    border-radius:100px; padding:11px 24px; background:linear-gradient(120deg, var(--teal), var(--violet)); color:#fff;
+  }
+  .gate-msg{ font-size:0.85rem; margin-top:10px; }
+  .gate-msg.error{ color:#a5445a; }
+  .state-banner{
+    padding:16px 20px; border-radius:12px; margin-bottom:24px; font-size:0.92rem; line-height:1.6;
+  }
+  .state-banner.info{ background:var(--mist); color:#3a2c58; }
+  .state-banner a{ color:var(--violet); font-weight:600; }
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <a href="/" class="back-link">&larr; Back to homepage</a>
-  <h1>Book a session</h1>
-  <p class="lede">Pick a time below. Slots update instantly and are held for you for 30 minutes while you pay. Free cancellation or rescheduling up to 48 hours before your session — you'll get a personal link to manage it after booking.</p>
+  <h1>Book your free consultation</h1>
+  <p class="lede">This is a no cost conversation and chance for your counsellor/psychotherapist to talk through your current difficulties and give you an opportunity to ask any questions prior to starting therapy.</p>
+  <p class="lede">Pick a Time Below and then complete the Initial Consultation Form. Your slot will be booked instantly after completing this form and you will receive confirmation of your booking via the email you have shared (please check your spam or junk folder if you have not received this).</p>
+  <p class="lede">Any problems or queries completing this or booking consultation, please also feel free to email Mags at <a href="mailto:mindzone.scot@outlook.com">mindzone.scot@outlook.com</a> or call 07731704653.</p>
 
-  <div class="residency">
-    <label for="residency">I am booking as a:</label>
-    <select id="residency">
-      <option value="resident">West Dunbartonshire resident — £40</option>
-      <option value="nonresident">Non-resident — £50</option>
-    </select>
-  </div>
-
-  <div class="residency" id="firstSessionCard">
-    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-      <input type="checkbox" id="firstSessionToggle" style="width:auto; margin:0;">
-      This is my first ever contact with MindZone (free initial 30 min call)
-    </label>
-    <p style="font-size:0.82rem; color:#786d94; margin-top:8px; margin-bottom:0;">A short, no-cost conversation to talk through what you need and check whether counselling with MindZone is the right fit. This call is held online, by phone or video.</p>
-    <div id="firstSessionFields" style="display:none; margin-top:14px;">
-      <label for="fsName">Full name</label>
-      <input type="text" id="fsName" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
-      <label for="fsEmail">Email</label>
-      <input type="email" id="fsEmail" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
-      <label for="fsContactMethod">Phone call or video call?</label>
-      <select id="fsContactMethod" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:100px; font-family:'Sora'; font-weight:600; margin-bottom:12px; box-sizing:border-box;">
-        <option value="phone">Phone call</option>
-        <option value="video">Video call</option>
-      </select>
-      <div id="fsPhoneField">
-        <label for="fsPhone">Phone number</label>
-        <input type="tel" id="fsPhone" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:4px; box-sizing:border-box;">
+  <div id="bookingArea">
+    <div class="calendar">
+      <div class="cal-header">
+        <button id="calPrev" aria-label="Previous month">‹</button>
+        <h3 id="calMonthLabel"></h3>
+        <button id="calNext" aria-label="Next month">›</button>
       </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <button id="clearFilter" class="clear-filter" style="display:none;">Show all upcoming dates</button>
+
+    <div id="statusBanner"></div>
+    <div id="slotList"><p class="loading">Loading available times…</p></div>
+
+    <div class="residency" id="intakeFormCard" style="display:none;">
+      <button id="changeTimeBtn" class="clear-filter" style="margin-bottom:14px;">&larr; Choose a different time</button>
+      <p id="chosenTimeLabel" style="font-weight:600; color:#3a2c58; margin-bottom:18px;"></p>
+
+      <div class="row">
+        <div>
+          <label for="fFirstName">First name</label>
+          <input type="text" id="fFirstName" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+        </div>
+        <div>
+          <label for="fSurname">Surname</label>
+          <input type="text" id="fSurname" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+        </div>
+      </div>
+
+      <label for="fDob">Date of birth</label>
+      <input type="date" id="fDob" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+
+      <label for="fAddress">Address</label>
+      <input type="text" id="fAddress" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+
+      <label for="fPostcode">Postcode</label>
+      <input type="text" id="fPostcode" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+
+      <label for="fEmail">Email</label>
+      <input type="email" id="fEmail" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+
+      <label for="fMobile">Mobile number</label>
+      <input type="tel" id="fMobile" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; margin-bottom:12px; box-sizing:border-box;">
+
+      <label>Would you like your initial consultation via video call (Microsoft Teams) or telephone?</label>
+      <select id="fContactMethod" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:100px; font-family:'Sora'; font-weight:600; margin-bottom:12px; box-sizing:border-box;">
+        <option value="video">Video call (Microsoft Teams)</option>
+        <option value="telephone">Telephone</option>
+      </select>
+
+      <label for="fReason">Reason for reaching out for counselling support</label>
+      <p style="font-size:0.8rem; color:#786d94; margin-top:-6px; margin-bottom:8px;">Please keep this brief — more details can be provided on your consultation call.</p>
+      <textarea id="fReason" rows="3" style="width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:'Sora'; font-size:0.95rem; margin-bottom:16px; box-sizing:border-box; resize:vertical;"></textarea>
+
+      <button id="submitBookingBtn" style="font-family:'Sora'; font-weight:600; font-size:0.9rem; cursor:pointer; border:none; border-radius:100px; padding:12px 26px; background:linear-gradient(120deg, var(--teal), var(--violet)); color:#fff;">Confirm booking</button>
+      <div id="intakeMsg" class="gate-msg"></div>
     </div>
   </div>
-
-  <div class="calendar">
-    <div class="cal-header">
-      <button id="calPrev" aria-label="Previous month">‹</button>
-      <h3 id="calMonthLabel"></h3>
-      <button id="calNext" aria-label="Next month">›</button>
-    </div>
-    <div class="cal-grid" id="calGrid"></div>
-  </div>
-
-  <button id="clearFilter" class="clear-filter" style="display:none;">Show all upcoming dates</button>
-
-  <div id="statusBanner"></div>
-  <div id="slotList"><p class="loading">Loading available times…</p></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -173,16 +209,6 @@
   }
   function formatPrice(pence){
     return pence === 0 ? "Free" : `£${(pence/100).toFixed(0)}`;
-  }
-  function currentResidency(){
-    return document.getElementById('residency').value; // 'resident' or 'nonresident'
-  }
-  function isFirstSessionClaimed(){
-    return document.getElementById('firstSessionToggle').checked;
-  }
-  function priceForSlot(s){
-    if (isFirstSessionClaimed()) return 0;
-    return currentResidency() === 'resident' ? s.price_pence_resident : s.price_pence_nonresident;
   }
 
   let latestSlots = [];
@@ -212,7 +238,11 @@
     const now = new Date();
     const todayStr = now.toISOString().slice(0,10);
     const nowTimeStr = now.toTimeString().slice(0,8); // 'HH:MM:SS'
-    const upcoming = data.filter(s => s.slot_date !== todayStr || s.slot_time > nowTimeStr);
+    let upcoming = data.filter(s => s.slot_date !== todayStr || s.slot_time > nowTimeStr);
+
+    // Privately reserved slots (set up by Mags for one specific client)
+    // never show up in the public list.
+    upcoming = upcoming.filter(s => !s.reserved_for_email);
 
     if (!upcoming.length) {
       container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
@@ -315,9 +345,9 @@
         <div class="slots">
           ${slots.map(s => `
             <button class="slot ${s.status !== 'available' ? 'taken' : ''}"
-                    data-id="${s.id}"
+                    data-id="${s.id}" data-date="${s.slot_date}" data-time="${s.slot_time}"
                     ${s.status !== 'available' ? 'disabled' : ''}>
-              ${s.slot_time.slice(0,5)}<span class="price">${formatPrice(priceForSlot(s))}</span>
+              ${s.slot_time.slice(0,5)}<span class="price">Free</span>
             </button>
           `).join('')}
         </div>
@@ -325,54 +355,53 @@
     `).join('');
 
     container.querySelectorAll('.slot:not(.taken)').forEach(btn => {
-      btn.addEventListener('click', () => bookSlot(btn.dataset.id, btn));
+      btn.addEventListener('click', () => openIntakeForm(btn.dataset.id, btn.dataset.date, btn.dataset.time));
     });
   }
 
-  document.getElementById('residency').addEventListener('change', renderSlots);
+  let chosenSlotId = null;
 
-  document.getElementById('firstSessionToggle').addEventListener('change', (e) => {
-    document.getElementById('firstSessionFields').style.display = e.target.checked ? 'block' : 'none';
-    document.getElementById('residency').disabled = e.target.checked;
-    renderSlots();
+  function openIntakeForm(slotId, dateStr, timeStr){
+    chosenSlotId = slotId;
+    document.getElementById('slotList').style.display = 'none';
+    document.getElementById('clearFilter').style.display = 'none';
+    document.querySelector('.calendar').style.display = 'none';
+    document.getElementById('chosenTimeLabel').textContent = `${formatDate(dateStr)} at ${timeStr.slice(0,5)}`;
+    document.getElementById('intakeFormCard').style.display = 'block';
+    document.getElementById('intakeFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  document.getElementById('changeTimeBtn').addEventListener('click', () => {
+    chosenSlotId = null;
+    document.getElementById('intakeFormCard').style.display = 'none';
+    document.getElementById('slotList').style.display = 'block';
+    document.querySelector('.calendar').style.display = 'block';
   });
 
-  function updatePhoneFieldVisibility(){
-    const method = document.getElementById('fsContactMethod').value;
-    document.getElementById('fsPhoneField').style.display = method === 'phone' ? 'block' : 'none';
-  }
-  document.getElementById('fsContactMethod').addEventListener('change', updatePhoneFieldVisibility);
-  updatePhoneFieldVisibility();
+  document.getElementById('submitBookingBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('intakeMsg');
+    msg.textContent = '';
 
-  async function bookSlot(slotId, btn){
-    const claimingFirstSession = isFirstSessionClaimed();
-    let firstSessionPayload = {};
+    const firstName = document.getElementById('fFirstName').value.trim();
+    const surname = document.getElementById('fSurname').value.trim();
+    const dob = document.getElementById('fDob').value;
+    const address = document.getElementById('fAddress').value.trim();
+    const postcode = document.getElementById('fPostcode').value.trim();
+    const email = document.getElementById('fEmail').value.trim();
+    const mobile = document.getElementById('fMobile').value.trim();
+    const contactMethod = document.getElementById('fContactMethod').value;
+    const reason = document.getElementById('fReason').value.trim();
 
-    if (claimingFirstSession) {
-      const fsName = document.getElementById('fsName').value.trim();
-      const fsEmail = document.getElementById('fsEmail').value.trim();
-      const fsContactMethod = document.getElementById('fsContactMethod').value;
-      const fsPhone = document.getElementById('fsPhone').value.trim();
-      if (!fsName || !fsEmail) {
-        alert('Please fill in your name and email to claim your free initial call.');
-        return;
-      }
-      if (fsContactMethod === 'phone' && !fsPhone) {
-        alert('Please add a phone number so we can call you.');
-        return;
-      }
-      firstSessionPayload = {
-        first_session: true,
-        client_name: fsName,
-        client_email: fsEmail,
-        session_format: 'online',
-        contact_method: fsContactMethod,
-        client_phone: fsContactMethod === 'phone' ? fsPhone : null,
-      };
+    if (!firstName || !surname || !dob || !address || !postcode || !email || !mobile) {
+      msg.textContent = 'Please fill in all fields above.';
+      msg.className = 'gate-msg error';
+      return;
     }
 
+    const btn = document.getElementById('submitBookingBtn');
     btn.disabled = true;
-    btn.textContent = claimingFirstSession ? "Booking…" : "Starting checkout…";
+    btn.textContent = 'Booking…';
+
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/bright-responder`, {
         method: 'POST',
@@ -381,29 +410,41 @@
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({ slot_id: slotId, residency: currentResidency(), ...firstSessionPayload })
+        body: JSON.stringify({
+          slot_id: chosenSlotId,
+          client_name: `${firstName} ${surname}`,
+          client_email: email,
+          client_phone: mobile,
+          date_of_birth: dob,
+          address, postcode,
+          contact_method: contactMethod,
+          booking_reason: reason,
+        })
       });
       const result = await res.json();
       if (!res.ok) {
-        alert(result.error || "That slot just became unavailable.");
-        loadSlots();
+        msg.textContent = result.error || "That slot just became unavailable.";
+        msg.className = 'gate-msg error';
         btn.disabled = false;
-        btn.textContent = claimingFirstSession ? "Book free call" : "Book";
+        btn.textContent = 'Confirm booking';
+        loadSlots();
         return;
       }
       window.location.href = result.redirect;
     } catch (err) {
       console.error(err);
-      alert("Something went wrong — please try again.");
-      loadSlots();
+      msg.textContent = 'Something went wrong — please try again.';
+      msg.className = 'gate-msg error';
+      btn.disabled = false;
+      btn.textContent = 'Confirm booking';
     }
-  }
+  });
 
   // Show a banner if we've just come back from Stripe
   const params = new URLSearchParams(window.location.search);
   if (params.get('status') === 'success') {
     document.getElementById('statusBanner').innerHTML =
-      `<div class="banner success">Thanks — your session is booked and paid for. A confirmation will follow by email.</div>`;
+      `<div class="banner success">Thanks — your consultation is booked. A confirmation will follow by email.</div>`;
   } else if (params.get('status') === 'cancelled') {
     document.getElementById('statusBanner').innerHTML =
       `<div class="banner cancelled">Checkout was cancelled — your slot has been released. Feel free to pick another time.</div>`;
@@ -419,9 +460,7 @@
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({ slot_id: cancelledSlotId, session_id: cancelledSessionId })
-      })
-        .catch(err => console.error('Failed to release hold:', err))
-        .finally(() => loadSlots()); // refresh so the freed slot shows immediately
+      }).catch(err => console.error('Failed to release hold:', err));
     }
   }
 
