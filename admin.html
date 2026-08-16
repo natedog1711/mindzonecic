@@ -163,6 +163,14 @@
     </div>
 
     <div class="card">
+      <h2>Clients</h2>
+      <p class="lede" style="font-size:0.85rem; margin-bottom:16px;">
+        Anyone who's completed a free consultation shows up here as <strong>Awaiting review</strong> and can't book a paid session until you approve them.
+      </p>
+      <div id="clientsList"><p class="empty">Loading…</p></div>
+    </div>
+
+    <div class="card">
       <h2>Add availability</h2>
       <div class="row">
         <div>
@@ -211,16 +219,7 @@
         <label><input type="checkbox" value="19:30"> 19:30</label>
       </div>
 
-      <div class="row">
-        <div>
-          <label for="priceResident">Resident price (£)</label>
-          <input type="number" id="priceResident" value="40" min="0">
-        </div>
-        <div>
-          <label for="priceNonresident">Non-resident price (£)</label>
-          <input type="number" id="priceNonresident" value="50" min="0">
-        </div>
-      </div>
+      <p style="font-size:0.85rem; color:#786d94; margin-bottom:16px;">These times are for free 30-minute initial consultation calls only — ongoing paid sessions are arranged separately through Kiku.</p>
 
       <button id="addBtn">Add these times</button>
       <div id="addMsg" class="msg"></div>
@@ -421,19 +420,15 @@
     const booked = data.filter(r => r.action === 'booked');
     const cancelled = data.filter(r => r.action === 'cancelled');
     const rescheduled = data.filter(r => r.action === 'rescheduled');
-    const online = booked.filter(r => r.session_format === 'online').length;
-    const inperson = booked.filter(r => r.session_format === 'inperson').length;
-    const grossIncome = booked.reduce((sum, r) => sum + (r.price_pence || 0), 0);
-    const refunded = cancelled.reduce((sum, r) => sum + (r.price_pence || 0), 0);
-    const netIncome = grossIncome - refunded;
+    const video = booked.filter(r => r.session_format === 'video').length;
+    const telephone = booked.filter(r => r.session_format === 'telephone').length;
 
     container.innerHTML = `
       <div class="stat-grid">
-        <div class="stat"><div class="num">${booked.length}</div><div class="label">Sessions booked</div></div>
-        <div class="stat"><div class="num">£${(netIncome/100).toFixed(0)}</div><div class="label">Net income</div></div>
+        <div class="stat"><div class="num">${booked.length}</div><div class="label">Consultations booked</div></div>
         <div class="stat"><div class="num">${cancelled.length}</div><div class="label">Cancelled</div></div>
         <div class="stat"><div class="num">${rescheduled.length}</div><div class="label">Rescheduled</div></div>
-        <div class="stat"><div class="num">${inperson} / ${online}</div><div class="label">In person / Online</div></div>
+        <div class="stat"><div class="num">${video} / ${telephone}</div><div class="label">Video / Telephone</div></div>
         <div class="stat"><div class="num">${visitCount ?? '—'}</div><div class="label">Site visits</div></div>
       </div>
     `;
@@ -469,13 +464,60 @@
         <div class="meta">
           Parent/guardian: ${r.parent_name} · ${r.contact_email}${r.contact_phone ? ` · ${r.contact_phone}` : ''}
         </div>
+        ${r.parent_phone || r.parent_email ? `<div class="meta" style="margin-top:2px;">Parent contact: ${r.parent_phone || ''}${r.parent_phone && r.parent_email ? ' · ' : ''}${r.parent_email || ''}</div>` : ''}
         ${r.notes ? `<div class="meta" style="margin-top:4px;">"${r.notes}"</div>` : ''}
+        <button class="remove-btn" data-id="${r.id}" style="margin-top:8px;">Remove</button>
       </div>
     `).join('');
 
     container.querySelectorAll('.status-select').forEach(sel => {
       sel.addEventListener('change', async () => {
         await db.from('youth_interest').update({ status: sel.value }).eq('id', sel.dataset.id);
+      });
+    });
+
+    container.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Remove this registration?')) return;
+        await db.from('youth_interest').delete().eq('id', btn.dataset.id);
+        loadYouthRegistrations();
+      });
+    });
+  }
+
+  async function loadClients(){
+    const container = document.getElementById('clientsList');
+    const { data, error } = await db
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      container.innerHTML = `<p class="empty">Couldn't load clients: ${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      container.innerHTML = `<p class="empty">No clients yet.</p>`;
+      return;
+    }
+
+    container.innerHTML = data.map(c => `
+      <div class="youth-row">
+        <div class="top-line">
+          <strong>${c.name || '(no name)'}</strong>
+          <select class="status-select" data-email="${c.email}">
+            <option value="awaiting_review" ${c.status === 'awaiting_review' ? 'selected' : ''}>Awaiting review</option>
+            <option value="approved" ${c.status === 'approved' ? 'selected' : ''}>Approved</option>
+            <option value="declined" ${c.status === 'declined' ? 'selected' : ''}>Declined</option>
+          </select>
+        </div>
+        <div class="meta">${c.email}</div>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.status-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        await db.from('clients').update({ status: sel.value, updated_at: new Date().toISOString() }).eq('email', sel.dataset.email);
       });
     });
   }
@@ -614,7 +656,9 @@
           <div class="slot-row">
             <span>
               ${s.slot_time.slice(0,5)} <span class="badge ${s.status}">${s.status}</span>
-              ${s.status === 'booked' && s.client_name ? ` — ${s.client_name}${s.client_email ? ` (${s.client_email})` : ''}${s.session_format ? ` · ${s.session_format === 'online' ? 'Online' : 'In person'}` : ''}` : ''}
+              ${s.status === 'booked' && s.client_name ? ` — ${s.client_name}${s.client_email ? ` (${s.client_email})` : ''}${s.client_phone ? ` · ${s.client_phone}` : ''}${s.session_format ? ` · ${s.session_format === 'video' ? 'Video call' : 'Telephone'}` : ''}` : ''}
+              ${s.status === 'booked' && s.date_of_birth ? `<br><span style="font-size:0.82rem; color:#786d94;">DOB: ${s.date_of_birth}${s.address ? ` · ${s.address}, ${s.postcode || ''}` : ''}</span>` : ''}
+              ${s.status === 'booked' && s.booking_reason ? `<br><span style="font-size:0.82rem; color:#786d94;">"${s.booking_reason}"</span>` : ''}
             </span>
             ${s.status === 'available'
               ? `<button class="remove-btn" data-id="${s.id}">Remove</button>`
@@ -644,8 +688,6 @@
     const endDate = document.getElementById('endDate').value;
     const days = [...document.querySelectorAll('#dayCheckboxes input:checked')].map(el => Number(el.value));
     const times = [...document.querySelectorAll('#timeCheckboxes input:checked')].map(el => el.value);
-    const priceResident = Math.round(Number(document.getElementById('priceResident').value) * 100);
-    const priceNonresident = Math.round(Number(document.getElementById('priceNonresident').value) * 100);
 
     if (!startDate || !endDate || !days.length || !times.length) {
       msg.textContent = 'Please fill in dates, at least one day, and at least one time.';
@@ -663,9 +705,10 @@
           rows.push({
             slot_date: d.toISOString().slice(0,10),
             slot_time: t,
-            price_pence_resident: priceResident,
-            price_pence_nonresident: priceNonresident,
-            session_type: 'Counselling session',
+            price_pence_resident: 0,
+            price_pence_nonresident: 0,
+            session_type: 'Free initial 30 min call',
+            duration_minutes: 30,
           });
         });
       }
@@ -745,7 +788,7 @@
         <div class="meta">
           ${r.client_email || ''} · ${formatDate(r.slot_date)} at ${r.slot_time ? r.slot_time.slice(0,5) : ''}
           ${r.price_pence != null ? ` · £${(r.price_pence/100).toFixed(0)}` : ''}
-          ${r.session_format ? ` · ${r.session_format === 'online' ? 'Online' : 'In person'}` : ''}
+          ${r.session_format ? ` · ${r.session_format === 'video' ? 'Video call' : 'Telephone'}` : ''}
         </div>
       </div>
     `).join('');
