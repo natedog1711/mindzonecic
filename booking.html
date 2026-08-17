@@ -131,7 +131,7 @@
   <a href="/" class="back-link">&larr; Back to homepage</a>
   <h1>Book your free consultation</h1>
   <p class="lede">This is a no cost conversation and chance for your counsellor/psychotherapist to talk through your current difficulties and give you an opportunity to ask any questions prior to starting therapy.</p>
-  <p class="lede">Free consultations run on <strong>Mondays</strong>. Pick a Time Below and then complete the Initial Consultation Form. Your slot will be booked instantly after completing this form and you will receive confirmation of your booking via the email you have shared (please check your spam or junk folder if you have not received this).</p>
+  <p class="lede">Free consultations are primarily held on <strong>Mondays</strong> — if a Monday doesn't work for you, please <a href="https://wa.me/447731704653" target="_blank" rel="noopener">contact Mags directly</a> to arrange another time. Pick a Time Below and then complete the Initial Consultation Form. Your slot will be booked instantly after completing this form and you will receive confirmation of your booking via the email you have shared (please check your spam or junk folder if you have not received this).</p>
   <p class="lede">Any problems or queries completing this or booking consultation, please also feel free to email Mags at <a href="mailto:mindzone.scot@outlook.com">mindzone.scot@outlook.com</a> or call 07731704653.</p>
 
   <div id="bookingArea">
@@ -239,7 +239,7 @@
       return;
     }
     if (!data.length) {
-      container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
+      container.innerHTML = `<p class="empty">No upcoming slots are open right now — please <a href="https://wa.me/447731704653" target="_blank" rel="noopener">contact Mags directly</a> to arrange a time.</p>`;
       return;
     }
 
@@ -261,7 +261,7 @@
     upcoming = upcoming.filter(s => s.status !== 'blocked');
 
     if (!upcoming.length) {
-      container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
+      container.innerHTML = `<p class="empty">No upcoming slots are open right now — please <a href="https://wa.me/447731704653" target="_blank" rel="noopener">contact Mags directly</a> to arrange a time.</p>`;
       return;
     }
 
