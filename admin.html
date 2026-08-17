@@ -70,6 +70,7 @@
   .badge.available{ background:#e3f6f2; color:var(--teal-deep); }
   .badge.booked{ background:var(--mist); color:var(--violet); }
   .badge.pending{ background:#fdf3e3; color:#a5762f; }
+  .badge.blocked{ background:#f3e3e8; color:#a5445a; }
   .remove-btn{
     background:none; border:none; color:var(--rose); font-size:0.85rem;
     font-weight:600; cursor:pointer; padding:4px 8px;
@@ -183,13 +184,13 @@
         </div>
       </div>
 
-      <label>Which days?</label>
+      <label>Which days? (free consultations currently only run on Mondays)</label>
       <div class="check-grid" id="dayCheckboxes">
         <label><input type="checkbox" value="1" checked> Mon</label>
-        <label><input type="checkbox" value="2" checked> Tue</label>
-        <label><input type="checkbox" value="3" checked> Wed</label>
-        <label><input type="checkbox" value="4" checked> Thu</label>
-        <label><input type="checkbox" value="5" checked> Fri</label>
+        <label><input type="checkbox" value="2"> Tue</label>
+        <label><input type="checkbox" value="3"> Wed</label>
+        <label><input type="checkbox" value="4"> Thu</label>
+        <label><input type="checkbox" value="5"> Fri</label>
         <label><input type="checkbox" value="6"> Sat</label>
         <label><input type="checkbox" value="7"> Sun</label>
       </div>
@@ -311,6 +312,17 @@
 
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // Formats a Date using its LOCAL year/month/day — never use
+  // toISOString().slice(0,10) for this, since that converts to UTC first
+  // and silently shifts the date backward by a day during British Summer
+  // Time (BST is UTC+1, so local midnight becomes 23:00 the day before in UTC).
+  function toLocalDateStr(date){
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   const loginPanel = document.getElementById('loginPanel');
   const adminPanel = document.getElementById('adminPanel');
 
@@ -398,7 +410,7 @@
   async function loadDashboard(){
     const container = document.getElementById('dashboardStats');
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+    const monthStart = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
     const monthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
     document.getElementById('dashboardTitle').textContent = monthLabel;
 
@@ -479,7 +491,8 @@
     container.querySelectorAll('.remove-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm('Remove this registration?')) return;
-        await db.from('youth_interest').delete().eq('id', btn.dataset.id);
+        const { error } = await db.from('youth_interest').delete().eq('id', btn.dataset.id);
+        if (error) { alert('Could not remove: ' + error.message); return; }
         loadYouthRegistrations();
       });
     });
@@ -554,7 +567,7 @@
     const { data, error } = await db
       .from('slots')
       .select('*')
-      .gte('slot_date', new Date().toISOString().slice(0,10))
+      .gte('slot_date', toLocalDateStr(new Date()))
       .order('slot_date').order('slot_time');
 
     if (error) {
@@ -577,7 +590,7 @@
     const firstDay = new Date(year, month, 1);
     const startOffset = (firstDay.getDay() + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const todayStr = new Date().toISOString().slice(0,10);
+    const todayStr = toLocalDateStr(new Date());
 
     const byDate = {};
     latestAdminSlots.forEach(s => { (byDate[s.slot_date] ||= []).push(s); });
@@ -655,12 +668,12 @@
         ${slots.map(s => `
           <div class="slot-row">
             <span>
-              ${s.slot_time.slice(0,5)} <span class="badge ${s.status}">${s.status}</span>
+              ${s.slot_time.slice(0,5)} <span class="badge ${s.status}">${s.status === 'blocked' ? 'blocked (Kiku)' : s.status}</span>
               ${s.status === 'booked' && s.client_name ? ` — ${s.client_name}${s.client_email ? ` (${s.client_email})` : ''}${s.client_phone ? ` · ${s.client_phone}` : ''}${s.session_format ? ` · ${s.session_format === 'video' ? 'Video call' : 'Telephone'}` : ''}` : ''}
               ${s.status === 'booked' && s.date_of_birth ? `<br><span style="font-size:0.82rem; color:#786d94;">DOB: ${s.date_of_birth}${s.address ? ` · ${s.address}, ${s.postcode || ''}` : ''}</span>` : ''}
               ${s.status === 'booked' && s.booking_reason ? `<br><span style="font-size:0.82rem; color:#786d94;">"${s.booking_reason}"</span>` : ''}
             </span>
-            ${s.status === 'available'
+            ${s.status === 'available' || s.status === 'blocked'
               ? `<button class="remove-btn" data-id="${s.id}">Remove</button>`
               : ''}
           </div>
@@ -703,7 +716,7 @@
       if (days.includes(isoDow)) {
         times.forEach(t => {
           rows.push({
-            slot_date: d.toISOString().slice(0,10),
+            slot_date: toLocalDateStr(d),
             slot_time: t,
             price_pence_resident: 0,
             price_pence_nonresident: 0,
@@ -823,7 +836,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mindzone-bookings-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `mindzone-bookings-${toLocalDateStr(new Date())}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   });
