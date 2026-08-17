@@ -131,7 +131,7 @@
   <a href="/" class="back-link">&larr; Back to homepage</a>
   <h1>Book your free consultation</h1>
   <p class="lede">This is a no cost conversation and chance for your counsellor/psychotherapist to talk through your current difficulties and give you an opportunity to ask any questions prior to starting therapy.</p>
-  <p class="lede">Pick a Time Below and then complete the Initial Consultation Form. Your slot will be booked instantly after completing this form and you will receive confirmation of your booking via the email you have shared (please check your spam or junk folder if you have not received this).</p>
+  <p class="lede">Free consultations run on <strong>Mondays</strong>. Pick a Time Below and then complete the Initial Consultation Form. Your slot will be booked instantly after completing this form and you will receive confirmation of your booking via the email you have shared (please check your spam or junk folder if you have not received this).</p>
   <p class="lede">Any problems or queries completing this or booking consultation, please also feel free to email Mags at <a href="mailto:mindzone.scot@outlook.com">mindzone.scot@outlook.com</a> or call 07731704653.</p>
 
   <div id="bookingArea">
@@ -204,6 +204,17 @@
 
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // Formats a Date using its LOCAL year/month/day — never use
+  // toISOString().slice(0,10) for this, since that converts to UTC first
+  // and silently shifts the date backward by a day during British Summer
+  // Time (BST is UTC+1, so local midnight becomes 23:00 the day before in UTC).
+  function toLocalDateStr(date){
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   function formatDate(d){
     return new Date(d + "T00:00:00").toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
   }
@@ -219,7 +230,7 @@
     const { data, error } = await db
       .from('public_slots')
       .select('*')
-      .gte('slot_date', new Date().toISOString().slice(0,10));
+      .gte('slot_date', toLocalDateStr(new Date()));
 
     const container = document.getElementById('slotList');
     if (error) {
@@ -236,13 +247,18 @@
     // time it is right now, so a slot earlier today would otherwise still
     // show as bookable for the rest of the day. Filter those out here.
     const now = new Date();
-    const todayStr = now.toISOString().slice(0,10);
+    const todayStr = toLocalDateStr(now);
     const nowTimeStr = now.toTimeString().slice(0,8); // 'HH:MM:SS'
     let upcoming = data.filter(s => s.slot_date !== todayStr || s.slot_time > nowTimeStr);
 
     // Privately reserved slots (set up by Mags for one specific client)
     // never show up in the public list.
     upcoming = upcoming.filter(s => !s.reserved_for_email);
+
+    // Slots automatically blocked because they clash with an existing
+    // Kiku appointment also never show up — from a visitor's point of
+    // view it should just look like that time was never offered.
+    upcoming = upcoming.filter(s => s.status !== 'blocked');
 
     if (!upcoming.length) {
       container.innerHTML = `<p class="empty">No upcoming slots are open right now — check back soon.</p>`;
@@ -272,7 +288,7 @@
     const firstDay = new Date(year, month, 1);
     const startOffset = (firstDay.getDay() + 6) % 7; // make Monday index 0
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const todayStr = new Date().toISOString().slice(0,10);
+    const todayStr = toLocalDateStr(new Date());
 
     const dowLabels = ['Mo','Tu','We','Th','Fr','Sa','Su'];
     let html = dowLabels.map(d => `<div class="cal-dow">${d}</div>`).join('');
