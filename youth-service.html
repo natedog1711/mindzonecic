@@ -76,7 +76,7 @@
   <p>MindZone is launching a free partnership community counselling pilot for young people aged <strong>13–18</strong> in Haldane and the surrounding areas — a safe, confidential space to talk, get support, and look after their mental health and wellbeing.</p>
 
   <div class="support-note">
-    This page is for registering interest in the upcoming service — it isn't for urgent support. If a young person is in crisis or at risk right now, please contact <strong>Childline free on 0800 1111</strong>, or call <strong>999</strong>.
+    This page is for registering interest in the upcoming service — it isn't for urgent support. If a young person is in crisis or at risk right now, please contact <strong>Childline free on 0800 1111</strong>, <strong>Samaritans free on 116 123</strong>, or call <strong>999</strong>.
   </div>
 
   <h2>What's on offer</h2>
@@ -116,18 +116,17 @@
       </div>
     </div>
 
-    <div id="parentContactFields" style="display:none;">
-      <div class="row">
-        <div>
-          <label for="parentPhone">Parent/guardian contact number</label>
-          <input type="tel" id="parentPhone">
-        </div>
-        <div>
-          <label for="parentEmail">Parent/guardian email</label>
-          <input type="email" id="parentEmail">
-        </div>
+    <div class="row">
+      <div>
+        <label for="parentPhone">Parent/guardian contact number (optional)</label>
+        <input type="tel" id="parentPhone">
+      </div>
+      <div>
+        <label for="parentEmail">Parent/guardian email (optional)</label>
+        <input type="email" id="parentEmail">
       </div>
     </div>
+    <p style="font-size:0.8rem; color:#786d94; margin-top:-10px; margin-bottom:16px;">Please add these if the young person is under 16, or if they may need extra support.</p>
 
     <label for="notes">Anything you'd like us to know? (optional)</label>
     <textarea id="notes" placeholder="Keep this brief — no need for details, just anything that helps us get in touch appropriately."></textarea>
@@ -159,11 +158,6 @@
     return age;
   }
 
-  document.getElementById('youngPersonDob').addEventListener('input', (e) => {
-    const age = calculateAge(e.target.value);
-    document.getElementById('parentContactFields').style.display = (age !== null && age < 16) ? 'block' : 'none';
-  });
-
   document.getElementById('submitBtn').addEventListener('click', async () => {
     const msg = document.getElementById('formMsg');
     msg.textContent = '';
@@ -171,7 +165,6 @@
 
     const dob = document.getElementById('youngPersonDob').value;
     const age = calculateAge(dob);
-    const isUnder16 = age !== null && age < 16;
 
     const payload = {
       young_person_name: document.getElementById('youngPersonName').value.trim(),
@@ -179,8 +172,8 @@
       parent_name: document.getElementById('parentName').value.trim(),
       contact_email: document.getElementById('contactEmail').value.trim(),
       contact_phone: document.getElementById('contactPhone').value.trim(),
-      parent_phone: isUnder16 ? document.getElementById('parentPhone').value.trim() : '',
-      parent_email: isUnder16 ? document.getElementById('parentEmail').value.trim() : '',
+      parent_phone: document.getElementById('parentPhone').value.trim(),
+      parent_email: document.getElementById('parentEmail').value.trim(),
       notes: document.getElementById('notes').value.trim(),
     };
 
@@ -191,11 +184,6 @@
     }
     if (age === null || age < 13 || age > 18) {
       msg.textContent = 'This service is for young people aged 13 to 18.';
-      msg.className = 'msg error';
-      return;
-    }
-    if (isUnder16 && (!payload.parent_phone || !payload.parent_email)) {
-      msg.textContent = 'As the young person is under 16, please also add a parent/guardian contact number and email.';
       msg.className = 'msg error';
       return;
     }
