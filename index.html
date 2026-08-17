@@ -133,7 +133,7 @@
     backdrop-filter:blur(10px);
     transition:max-height 0.35s ease;
   }
-  .nav-mobile-panel.open{ max-height:90vh; overflow-y:auto; }
+  .nav-mobile-panel.open{ overflow-y:auto; }
   .nav-mobile-panel ul{
     list-style:none; display:flex; flex-direction:column;
     padding:8px 28px 20px;
@@ -433,11 +433,20 @@
 
     function closeMenu(){
       panel.classList.remove('open');
+      panel.style.maxHeight = '';
       toggle.setAttribute('aria-expanded', 'false');
       toggle.setAttribute('aria-label', 'Open menu');
     }
     function openMenu(){
       panel.classList.add('open');
+      // Use an actual measured pixel height rather than a vh-based CSS
+      // value — vh is calculated inconsistently in some in-app browsers
+      // (e.g. Facebook's Android browser, whose toolbar dynamically
+      // shows/hides), which can silently clip content that CSS alone
+      // would size correctly in a normal browser.
+      var available = window.innerHeight * 0.9;
+      var contentHeight = panel.scrollHeight;
+      panel.style.maxHeight = Math.min(available, contentHeight) + 'px';
       toggle.setAttribute('aria-expanded', 'true');
       toggle.setAttribute('aria-label', 'Close menu');
     }
